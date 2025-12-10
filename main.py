@@ -46,13 +46,15 @@ class QuizApp(tk.Tk):
         self.minsize(900, 550)
 
         # Design palette
-        self.bg_color = "#0f172a"       # dark background
-        self.card_color = "#111827"     # panels
-        self.accent_color = "#38bdf8"   # cyan
-        self.correct_color = "#22c55e"  # green
-        self.wrong_color = "#ef4444"    # red
-        self.text_color = "#e5e7eb"     # light text
-        self.muted_text = "#9ca3af"     # secondary text
+        self.bg_color = "#f8fafc"       # airy background
+        self.card_color = "#ffffff"     # panels
+        self.card_border = "#e2e8f0"    # soft outline
+        self.accent_color = "#2563eb"   # primary blue
+        self.accent_hover = "#1d4ed8"
+        self.correct_color = "#16a34a"  # green
+        self.wrong_color = "#dc2626"    # red
+        self.text_color = "#0f172a"     # dark text
+        self.muted_text = "#475569"     # secondary text
 
         self.configure(bg=self.bg_color)
 
@@ -65,10 +67,12 @@ class QuizApp(tk.Tk):
         self.selected_var = tk.IntVar(value=-1)
         self.score: int = 0
         self.total: int = 0
+        self.bubbles = []
 
         # Load data + build UI
         self.load_questions(json_path)
         self.build_ui()
+        self.animate_background()
 
     # ---------- Data loading ----------
 
@@ -113,7 +117,15 @@ class QuizApp(tk.Tk):
         self.rowconfigure(1, weight=1)
 
         # Header
-        header = tk.Frame(self, bg=self.bg_color)
+        self.background_canvas = tk.Canvas(
+            self,
+            bg=self.bg_color,
+            highlightthickness=0,
+            bd=0,
+        )
+        self.background_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+
+        header = tk.Frame(self, bg=self.bg_color, bd=0)
         header.grid(row=0, column=0, sticky="ew", padx=24, pady=(20, 10))
         header.columnconfigure(0, weight=1)
 
@@ -143,7 +155,13 @@ class QuizApp(tk.Tk):
         main.rowconfigure(0, weight=1)
 
         # Left panel: thematics list
-        left_panel = tk.Frame(main, bg=self.card_color, bd=0, highlightthickness=0)
+        left_panel = tk.Frame(
+            main,
+            bg=self.card_color,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.card_border,
+        )
         left_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 16))
         left_panel.columnconfigure(0, weight=1)
         left_panel.rowconfigure(1, weight=1)
@@ -159,10 +177,10 @@ class QuizApp(tk.Tk):
 
         self.theme_listbox = tk.Listbox(
             left_panel,
-            bg="#020617",
+            bg="#eef2ff",
             fg=self.text_color,
             selectbackground=self.accent_color,
-            selectforeground="#020617",
+            selectforeground="#ffffff",
             activestyle="none",
             highlightthickness=0,
             bd=0,
@@ -178,18 +196,27 @@ class QuizApp(tk.Tk):
             text="Start selected theme",
             command=self.on_start_theme,
             bg=self.accent_color,
-            fg="#020617",
+            fg="#ffffff",
             bd=0,
             font=("Helvetica", 11, "bold"),
-            activebackground="#0ea5e9",
-            activeforeground="#020617",
-            padx=10,
-            pady=6,
+            activebackground=self.accent_hover,
+            activeforeground="#ffffff",
+            padx=12,
+            pady=8,
+            relief="flat",
+            cursor="hand2",
         )
         start_theme_btn.grid(row=2, column=0, sticky="ew", padx=16, pady=(0, 12))
+        self._add_hover_effect(start_theme_btn, self.accent_color, self.accent_hover)
 
         # Right panel: quiz card
-        quiz_card = tk.Frame(main, bg=self.card_color, bd=0, highlightthickness=0)
+        quiz_card = tk.Frame(
+            main,
+            bg=self.card_color,
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.card_border,
+        )
         quiz_card.grid(row=0, column=1, sticky="nsew")
         quiz_card.columnconfigure(0, weight=1)
         quiz_card.rowconfigure(2, weight=1)
@@ -265,33 +292,112 @@ class QuizApp(tk.Tk):
             bottom_bar,
             text="Submit answer",
             command=self.on_submit,
-            bg="#1d4ed8",
-            fg="white",
+            bg=self.accent_color,
+            fg="#ffffff",
             bd=0,
             font=("Helvetica", 11, "bold"),
-            activebackground="#1e40af",
-            activeforeground="white",
+            activebackground=self.accent_hover,
+            activeforeground="#ffffff",
             padx=14,
-            pady=6,
+            pady=8,
+            relief="flat",
             state="disabled",
+            cursor="hand2",
         )
         self.submit_btn.grid(row=0, column=1, sticky="e", padx=(0, 8))
+        self._add_hover_effect(self.submit_btn, self.accent_color, self.accent_hover)
 
         self.next_btn = tk.Button(
             bottom_bar,
             text="Next question",
             command=self.on_next,
-            bg="#0f766e",
-            fg="white",
+            bg="#10b981",
+            fg="#0b2b1f",
             bd=0,
             font=("Helvetica", 11, "bold"),
-            activebackground="#115e59",
-            activeforeground="white",
+            activebackground="#0ea371",
+            activeforeground="#0b2b1f",
             padx=14,
-            pady=6,
+            pady=8,
+            relief="flat",
             state="disabled",
+            cursor="hand2",
         )
         self.next_btn.grid(row=0, column=2, sticky="e")
+        self._add_hover_effect(self.next_btn, "#10b981", "#0ea371")
+
+    def _add_hover_effect(self, widget: tk.Widget, normal_color: str, hover_color: str) -> None:
+        def on_enter(_event: tk.Event) -> None:  # type: ignore[type-arg]
+            widget.config(bg=hover_color)
+
+        def on_leave(_event: tk.Event) -> None:  # type: ignore[type-arg]
+            widget.config(bg=normal_color)
+
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
+
+    def animate_background(self) -> None:
+        """Create soft, floating shapes to make the experience dynamic yet minimal."""
+
+        if not hasattr(self, "background_canvas"):
+            return
+
+        self.background_canvas.lower()
+        self.after(120, self._seed_bubbles)
+        self.after(220, self._move_bubbles)
+
+    def _seed_bubbles(self) -> None:
+        if not hasattr(self, "background_canvas"):
+            return
+
+        self.background_canvas.delete("all")
+        self.bubbles = []
+        width = max(self.winfo_width(), 900)
+        height = max(self.winfo_height(), 550)
+        palette = ["#dbeafe", "#e0f2fe", "#e2e8f0", "#bfdbfe"]
+
+        for _ in range(9):
+            size = random.randint(60, 140)
+            x = random.randint(-40, width - size + 40)
+            y = random.randint(-40, height - size + 40)
+            bubble = self.background_canvas.create_oval(
+                x,
+                y,
+                x + size,
+                y + size,
+                fill=random.choice(palette),
+                outline="",
+                stipple="gray12",
+            )
+            self.bubbles.append(
+                {
+                    "id": bubble,
+                    "dx": random.choice([-1, 1]) * random.uniform(0.3, 0.8),
+                    "dy": random.choice([-1, 1]) * random.uniform(0.3, 0.8),
+                }
+            )
+
+    def _move_bubbles(self) -> None:
+        if not hasattr(self, "background_canvas") or not self.bubbles:
+            self.after(300, self._move_bubbles)
+            return
+
+        width = max(self.winfo_width(), 900)
+        height = max(self.winfo_height(), 550)
+
+        for bubble in self.bubbles:
+            item_id = bubble["id"]
+            dx = bubble["dx"]
+            dy = bubble["dy"]
+            self.background_canvas.move(item_id, dx, dy)
+            x1, y1, x2, y2 = self.background_canvas.coords(item_id)
+
+            if x1 <= -60 or x2 >= width + 60:
+                bubble["dx"] = -dx
+            if y1 <= -60 or y2 >= height + 60:
+                bubble["dy"] = -dy
+
+        self.after(60, self._move_bubbles)
 
     # ---------- Theme & navigation ----------
 
@@ -364,7 +470,7 @@ class QuizApp(tk.Tk):
                     fg=self.text_color,
                     activebackground=self.card_color,
                     activeforeground=self.text_color,
-                    selectcolor="#020617",
+                    selectcolor="#e2e8f0",
                     font=("Helvetica", 12),
                     pady=4,
                 )
@@ -385,7 +491,7 @@ class QuizApp(tk.Tk):
                     fg=self.text_color,
                     activebackground=self.card_color,
                     activeforeground=self.text_color,
-                    selectcolor="#020617",
+                    selectcolor="#e2e8f0",
                     font=("Helvetica", 12),
                     pady=4,
                 )
