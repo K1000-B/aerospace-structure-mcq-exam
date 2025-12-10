@@ -135,6 +135,94 @@
       "correct": false,
       "source": "practice",
       "ts": 1765388659.747305
+    },
+    {
+      "question_id": 32,
+      "theme": "Beam mechanics",
+      "category": "TF",
+      "correct": true,
+      "source": "practice",
+      "ts": 1765389750.2773728
+    },
+    {
+      "question_id": 32,
+      "theme": "Beam mechanics",
+      "category": "TF",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765389754.685052
+    },
+    {
+      "question_id": 32,
+      "theme": "Beam mechanics",
+      "category": "TF",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765389767.735868
+    },
+    {
+      "question_id": 34,
+      "theme": "Shear deformability",
+      "category": "QCM",
+      "correct": false,
+      "source": "exam",
+      "ts": 1765389789.718869
+    },
+    {
+      "question_id": 33,
+      "theme": "Riveted connections",
+      "category": "QCM",
+      "correct": false,
+      "source": "exam",
+      "ts": 1765389789.719697
+    },
+    {
+      "question_id": 30,
+      "theme": "Plates",
+      "category": "TF",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765389789.7205708
+    },
+    {
+      "question_id": 3,
+      "theme": "Finite Elements / Timoshenko beam",
+      "category": "TF",
+      "correct": false,
+      "source": "exam",
+      "ts": 1765389789.720901
+    },
+    {
+      "question_id": 35,
+      "theme": "Axial stiffness",
+      "category": "QCM",
+      "correct": false,
+      "source": "exam",
+      "ts": 1765389789.721246
+    },
+    {
+      "question_id": 36,
+      "theme": "Plane strain",
+      "category": "TF",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765389789.721577
+    },
+    {
+      "question_id": 14,
+      "theme": "Beam theory",
+      "category": "TF",
+      "correct": true,
+      "source": "practice",
+      "ts": 1765389919.6221929
+    },
+    {
+      "question_id": 14,
+      "theme": "Beam theory",
+      "category": "TF",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765389922.68732
     }
   ],
   "goals": [

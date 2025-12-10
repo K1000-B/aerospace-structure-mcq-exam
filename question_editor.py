@@ -296,6 +296,30 @@ class QuestionEditor(tk.Tk):
         self.question_text.grid(row=1, column=0, sticky="ew", pady=(6, 0))
         self.question_text.focus_set()
 
+        # Optional explanation
+        explication_frame = tk.Frame(container, bg=self.card)
+        explication_frame.grid(row=4, column=0, sticky="ew", padx=16, pady=8)
+        explication_frame.columnconfigure(0, weight=1)
+
+        tk.Label(
+            explication_frame,
+            text="Explication (optionnel)",
+            font=("Helvetica", 12, "bold"),
+            fg=self.text,
+            bg=self.card,
+        ).grid(row=0, column=0, sticky="w")
+
+        self.explication_text = tk.Text(
+            explication_frame,
+            height=4,
+            wrap="word",
+            font=("Helvetica", 11),
+            highlightthickness=1,
+            highlightbackground=self.border,
+            relief="flat",
+        )
+        self.explication_text.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+
         # Frames that swap based on category
         self.tf_frame = tk.Frame(container, bg=self.card)
         self.qcm_frame = tk.Frame(container, bg=self.card)
@@ -305,7 +329,7 @@ class QuestionEditor(tk.Tk):
 
         # Action buttons
         actions = tk.Frame(container, bg=self.card)
-        actions.grid(row=5, column=0, sticky="ew", padx=16, pady=(18, 14))
+        actions.grid(row=6, column=0, sticky="ew", padx=16, pady=(18, 14))
         actions.columnconfigure(0, weight=1)
 
         save_btn = tk.Button(
@@ -451,9 +475,9 @@ class QuestionEditor(tk.Tk):
         self.qcm_frame.grid_forget()
 
         if category == "TF":
-            self.tf_frame.grid(row=4, column=0, sticky="w", padx=0, pady=(2, 0))
+            self.tf_frame.grid(row=5, column=0, sticky="w", padx=0, pady=(2, 0))
         else:
-            self.qcm_frame.grid(row=4, column=0, sticky="ew", padx=0, pady=(2, 0))
+            self.qcm_frame.grid(row=5, column=0, sticky="ew", padx=0, pady=(2, 0))
             self._refresh_answer_menu()
 
     def _refresh_next_id_label(self) -> None:
@@ -489,6 +513,11 @@ class QuestionEditor(tk.Tk):
 
         self.question_text.delete("1.0", "end")
         self.question_text.insert("1.0", question.get("question", ""))
+
+        self.explication_text.delete("1.0", "end")
+        existing_explication = question.get("explication", "")
+        if isinstance(existing_explication, str):
+            self.explication_text.insert("1.0", existing_explication)
 
         self._clear_choice_entries()
         if question.get("category") == "QCM":
@@ -534,6 +563,7 @@ class QuestionEditor(tk.Tk):
         category = self.category_var.get()
         thematic = self.thematic_var.get().strip()
         question = self.question_text.get("1.0", "end").strip()
+        explication = self.explication_text.get("1.0", "end").strip()
 
         if not thematic or not question:
             messagebox.showerror("Missing data", "Thematic and question text are required.")
@@ -550,6 +580,7 @@ class QuestionEditor(tk.Tk):
                 "question": question,
                 "choices": None,
                 "answer": bool(self.tf_answer_var.get()),
+                "explication": explication,
             }
         else:
             choices = [c.get().strip() for c in self.choice_entries if c.get().strip()]
@@ -569,6 +600,7 @@ class QuestionEditor(tk.Tk):
                 "question": question,
                 "choices": choices,
                 "answer": answer,
+                "explication": explication,
             }
 
         if is_edit:
@@ -598,6 +630,7 @@ class QuestionEditor(tk.Tk):
 
         self.thematic_var.set("")
         self.question_text.delete("1.0", "end")
+        self.explication_text.delete("1.0", "end")
         self.category_var.set("TF")
         self.tf_answer_var.set(True)
 

@@ -39,6 +39,9 @@ class Question:
     # bool for TF, str for QCM
     answer: Union[bool, str]
 
+    # Optional explanation shown when the answer is incorrect
+    explication: Optional[str] = None
+
 
 # ---------- Persistent stats manager ----------
 
@@ -322,6 +325,12 @@ class QuizApp(tk.Tk):
             self.questions = []
             for item in raw_list:
                 # Basic validation + safe defaults
+                explication = item.get("explication")
+                if isinstance(explication, str):
+                    explication = explication.strip()
+                else:
+                    explication = None
+
                 q = Question(
                     id=int(item["id"]),
                     category=item["category"],
@@ -329,6 +338,7 @@ class QuizApp(tk.Tk):
                     question=item["question"],
                     choices=item.get("choices"),
                     answer=item["answer"],
+                    explication=explication,
                 )
                 self.questions.append(q)
 
@@ -648,6 +658,8 @@ class QuizApp(tk.Tk):
             font=("Helvetica", 11, "bold"),
             fg=self.text_color,
             bg=self.card_color,
+            wraplength=680,
+            justify="left",
         )
         self.feedback_label.grid(row=0, column=0, sticky="w")
 
@@ -688,6 +700,17 @@ class QuizApp(tk.Tk):
         )
         self.next_btn.grid(row=0, column=2, sticky="e")
         self._add_hover_effect(self.next_btn, "#10b981", "#0ea371")
+
+        self.explanation_label = tk.Label(
+            bottom_bar,
+            text="",
+            font=("Helvetica", 10),
+            fg=self.muted_text,
+            bg=self.card_color,
+            wraplength=780,
+            justify="left",
+        )
+        self.explanation_label.grid(row=1, column=0, columnspan=3, sticky="w", pady=(6, 0))
 
     def _refresh_theme_listbox(self) -> None:
         """Keep the theme selector in sync with loaded questions."""
@@ -1597,6 +1620,24 @@ class QuizApp(tk.Tk):
         self.timer_label.config(text="Timer: 00:00")
         self.start_timer()
 
+    def _clear_explanation(self) -> None:
+        if hasattr(self, "explanation_label"):
+            self.explanation_label.config(text="")
+
+    def _get_explanation_text(self, question: Question) -> str:
+        raw = question.explication or ""
+        return raw.strip()
+
+    def _maybe_show_explanation(self, question: Question, is_correct: bool) -> None:
+        explanation = self._get_explanation_text(question)
+        if (not is_correct) and explanation:
+            self.explanation_label.config(
+                text=f"Explication : {explanation}",
+                fg=self.muted_text,
+            )
+        else:
+            self._clear_explanation()
+
     def show_question(self) -> None:
         """Display current question and build answer widgets based on category."""
         if not self.filtered_questions:
@@ -1611,6 +1652,7 @@ class QuizApp(tk.Tk):
 
         q = self.filtered_questions[self.current_index]
 
+        self._clear_explanation()
         self.question_label.config(
             text=f"Q{self.current_index + 1} (ID {q.id}): {q.question}"
         )
@@ -1682,6 +1724,7 @@ class QuizApp(tk.Tk):
             return
 
         q = self.filtered_questions[self.current_index]
+        self._clear_explanation()
 
         self.total += 1
         is_correct = False
@@ -1703,6 +1746,7 @@ class QuizApp(tk.Tk):
                 fg=self.muted_text,
             )
             self.submit_btn.config(state="disabled")
+            self._clear_explanation()
 
             if self.current_index == len(self.filtered_questions) - 1:
                 self.finish_exam()
@@ -1754,6 +1798,7 @@ class QuizApp(tk.Tk):
                         fg=self.wrong_color,
                     )
 
+            self._maybe_show_explanation(q, bool(is_correct))
             self.update_score_label()
             self.submit_btn.config(state="disabled")
             self.next_btn.config(state="normal")
@@ -1795,6 +1840,7 @@ class QuizApp(tk.Tk):
         if not self.exam_mode:
             return
 
+        self._clear_explanation()
         self.stop_timer()
         total_questions = len(self.filtered_questions)
         correct_count = 0
@@ -1802,6 +1848,7 @@ class QuizApp(tk.Tk):
 
         for idx, q in enumerate(self.filtered_questions):
             user_answer = self.exam_user_answers[idx]
+            explanation = self._get_explanation_text(q)
             if q.category == "TF":
                 correct_answer: Union[bool, str] = bool(q.answer)  # type: ignore[arg-type]
                 is_correct = user_answer == correct_answer
@@ -1825,12 +1872,16 @@ class QuizApp(tk.Tk):
                 correct_count += 1
             self.stats.record_attempt(q, bool(is_correct), source="exam")
 
-            corrections.append(
-                f"Q{idx + 1} ({q.category} - {q.thematic}): {q.question}\n"
-                f"  Votre réponse : {user_display}\n"
-                f"  Réponse attendue : {correct_display}\n"
-                f"  Statut : {'✅ Correct' if is_correct else '❌ Incorrect'}\n"
-            )
+            lines = [
+                f"Q{idx + 1} ({q.category} - {q.thematic}): {q.question}",
+                f"  Votre réponse : {user_display}",
+                f"  Réponse attendue : {correct_display}",
+                f"  Statut : {'✅ Correct' if is_correct else '❌ Incorrect'}",
+            ]
+            if (not is_correct) and explanation:
+                lines.append(f"  Explication : {explanation}")
+
+            corrections.append("\n".join(lines) + "\n")
 
         self.score = correct_count
         self.total = total_questions

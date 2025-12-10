@@ -6,7 +6,8 @@
       "thematic": "Wing structures / Buckling",
       "question": "“Differential bending” is a phenomenon that appears when the compressed panels of a wing are buckled, so that their bending stiffness contribution is different from that of the panels that remain stable.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "Differential bending refers to different bending stiffness and curvature between adjacent structural elements, but buckling panels effectively lose most of their bending contribution. The statement mixes concepts and does not correctly define the phenomenon, so it is false."
     },
     {
       "id": 2,
@@ -14,7 +15,8 @@
       "thematic": "Beam theory / Shear deformability",
       "question": "You can neglect shear deformability for beams if the number EI/(l^2 EA) is large.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "The criterion to neglect shear deformability compares bending stiffness EI with shear stiffness GA through a term like EI/(k GA l^2), not EI/(l^2 EA). Using axial stiffness EA in this ratio is incorrect, so the statement is false."
     },
     {
       "id": 3,
@@ -22,7 +24,8 @@
       "thematic": "Finite Elements / Timoshenko beam",
       "question": "You need to use Hermitian shape functions for the displacement field when building a Timoshenko beam finite element.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "Timoshenko beams only require C0 continuity for displacements and rotations. Hermitian (C1) shape functions are typically used for Euler–Bernoulli beams, not required for Timoshenko finite elements, so the statement is false."
     },
     {
       "id": 4,
@@ -37,7 +40,8 @@
         "correct for a state of plane strain",
         "none of the above"
       ],
-      "answer": "correct for a state of axial stress"
+      "answer": "correct for a state of axial stress",
+      "explication": "In a pure axial stress state, σzz is the only non-zero normal stress and is directly related to εzz by σzz = E εzz for a linear elastic isotropic material. This is exactly the one-dimensional Hooke’s law, so it is correct for an axial stress state."
     },
     {
       "id": 5,
@@ -51,7 +55,8 @@
         "the derivative with respect to the chord direction of the axial stress in the panel",
         "none of the above"
       ],
-      "answer": "the average shear stress multiplied by the panel thickness"
+      "answer": "the average shear stress multiplied by the panel thickness",
+      "explication": "For thin-walled members, shear flow q is defined as shear force per unit length and is given by q = τ̄ t, where τ̄ is the average shear stress and t is the panel thickness. Hence it is the average shear stress multiplied by the thickness."
     },
     {
       "id": 6,
@@ -67,7 +72,8 @@
         "described by a cubic polynomial function",
         "none of the above"
       ],
-      "answer": "higher at the extremities"
+      "answer": "higher at the extremities",
+      "explication": "In bonded joints, load transfer starts at the ends of the overlap, creating peak shear stresses near the extremities due to shear lag. Therefore the shear stress in the adhesive is higher at the extremities."
     },
     {
       "id": 7,
@@ -75,7 +81,8 @@
       "thematic": "Beam bending",
       "question": "The axial stress of beam transmitting a constant bending moment Mx does not depend on the material elastic modulus E.",
       "choices": null,
-      "answer": true
+      "answer": true,
+      "explication": "In pure bending, the normal stress distribution is given by σx = Mx y / I, which depends on the bending moment and cross-sectional geometry only. The elastic modulus E controls deflections but not the stress distribution, so the statement is true."
     },
     {
       "id": 8,
@@ -83,7 +90,8 @@
       "thematic": "Buckling theory",
       "question": "The Timoshenko model is used to compute the critical buckling stress of a simply supported compressed plate.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "The Timoshenko model is a beam theory including shear deformation, used for beams and not for plate buckling. Critical buckling stresses of plates are instead computed using plate and shell theories, so the statement is false."
     },
     {
       "id": 9,
@@ -91,7 +99,8 @@
       "thematic": "Finite elements / Shape functions",
       "question": "Hermitian shape functions are C2 (continuous, and with continuous first and second derivatives).",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "Hermitian shape functions ensure C1 continuity (continuity of displacement and its first derivative), but not C2. Having continuous second derivatives as well would be C2, which is not the standard property of Hermitian beam functions, so the statement is false."
     },
     {
       "id": 10,
@@ -106,7 +115,8 @@
         "a special design technique preventing the buckling of beams",
         "none of the above"
       ],
-      "answer": "a failure mode of thin-walled compressed beam"
+      "answer": "a failure mode of thin-walled compressed beam",
+      "explication": "Crippling describes a local instability and crushing-type failure in thin-walled compressed members, typically webs or flanges of thin-walled beams or struts. It is therefore a failure mode of thin-walled compressed beams."
     },
     {
       "id": 11,
@@ -120,7 +130,8 @@
         "has quadratic convergence of the displacements with respect to h",
         "none of the above"
       ],
-      "answer": "has quadratic convergence of the stress with respect to h"
+      "answer": "has quadratic convergence of the stress with respect to h",
+      "explication": "For a sufficiently regular 3D elastic solution with finite H1 norm, quadratic (p = 2) finite elements give a stress error of order O(h^2). Thus the stress converges quadratically with mesh size h, matching the given statement."
     },
     {
       "id": 12,
@@ -135,7 +146,8 @@
         "is defined up to a rigid body motion; thus, not being unique, it is not possible to compute the stress and strain fields",
         "none of the above"
       ],
-      "answer": "none of the above"
+      "answer": "none of the above",
+      "explication": "For an unconstrained structure under self-equilibrated loads, stresses and strains are still well-defined despite the presence of rigid body modes. None of the proposed answers correctly describes this situation, so “none of the above” is correct."
     },
     {
       "id": 13,
@@ -143,7 +155,8 @@
       "thematic": "Structural mechanics",
       "question": "The internal forces in a statically determined beam structure depend on the material elastic properties.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "In a statically determined structure, internal forces are obtained solely from equilibrium, independent of material stiffness. Elastic properties only affect deformations, so internal forces do not depend on the material, making the statement false."
     },
     {
       "id": 14,
@@ -151,7 +164,8 @@
       "thematic": "Beam theory",
       "question": "The Timoshenko beam model does not account for transverse shear deformation.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "The key feature of the Timoshenko beam model is that it explicitly accounts for transverse shear deformation. Neglecting shear deformation corresponds to Euler–Bernoulli theory, so the statement that Timoshenko does not account for shear is false."
     },
     {
       "id": 15,
@@ -159,7 +173,8 @@
       "thematic": "Thin-walled beams",
       "question": "The position of the shear center of a thin-walled beam depends on the loading conditions.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "The shear center location is a purely geometric property of the cross-section and does not depend on the particular loading conditions. It is defined as the point where a transverse load does not produce twist, so the statement is false."
     },
     {
       "id": 16,
@@ -174,7 +189,8 @@
         "the flows equilibrating the load introduced by the rib",
         "none of the above"
       ],
-      "answer": "the flows equilibrating the load introduced by the rib"
+      "answer": "the flows equilibrating the load introduced by the rib",
+      "explication": "The rib introduces loads into the surrounding structure, and the shear flows in the skins and spars must equilibrate the loads transmitted by the rib. Therefore, they are the flows equilibrating the load introduced by the rib."
     },
     {
       "id": 17,
@@ -187,7 +203,8 @@
         "is used to impose the compatibility",
         "none of the above"
       ],
-      "answer": "is used to impose the equilibrium"
+      "answer": "is used to impose the equilibrium",
+      "explication": "The Principle of Virtual Work states that the virtual work of internal forces equals the virtual work of external forces for all admissible virtual displacements, which enforces equilibrium. Compatibility and essential boundary conditions are built into the choice of virtual displacements, so its main role is to impose equilibrium."
     },
     {
       "id": 18,
@@ -202,7 +219,8 @@
         "is defined up to a rigid body motion; thus, not being unique, the stress and displacement fields can never be computed",
         "none of the above"
       ],
-      "answer": "can be obtained, up to a rigid body motion, after constraining the structure isostatically"
+      "answer": "can be obtained, up to a rigid body motion, after constraining the structure isostatically",
+      "explication": "If the structure is unconstrained, rigid body modes prevent a unique displacement solution. By constraining it isostatically, one removes the rigid body motions, obtaining a unique displacement field up to an arbitrary rigid body motion. Hence the given statement is correct."
     },
     {
       "id": 19,
@@ -210,7 +228,8 @@
       "thematic": "Beam modeling",
       "question": "Any structure with one dimension much larger than the other two can likely be modeled as a beam.",
       "choices": null,
-      "answer": true
+      "answer": true,
+      "explication": "When one dimension is much larger than the other two, the structural behavior is dominated by longitudinal bending and shear, which can typically be captured by beam theory. Thus, such a structure can likely be modeled as a beam, making the statement true in an engineering sense."
     },
     {
       "id": 20,
@@ -218,7 +237,8 @@
       "thematic": "Timoshenko beam",
       "question": "According to the Timoshenko beam model, the transverse shear stresses are linear on the cross section.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "In Timoshenko beam theory, the actual shear stress distribution through the cross-section is not assumed to be linear; instead, a shear correction factor is used to account for the non-uniform distribution. Therefore the statement that stresses are linear is false."
     },
     {
       "id": 21,
@@ -226,7 +246,8 @@
       "thematic": "Closed sections / Shear center",
       "question": "The position of the shear center of a closed-cell section can be evaluated using the shear flow equations and the equivalence to internal moment.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "For closed-cell sections, shear flows are constrained by compatibility of warping and the constant shear flow in each cell. The simple open-section shear center formulas using only equivalence to internal moments are not sufficient, so the statement is false."
     },
     {
       "id": 22,
@@ -240,7 +261,8 @@
         "always",
         "none of the above"
       ],
-      "answer": "always"
+      "answer": "always",
+      "explication": "If the members are slender, their response is governed primarily by axial force, bending and shear, which beam elements are designed to capture. Therefore a system of slender beams can in principle always be modeled using beam finite elements."
     },
     {
       "id": 23,
@@ -253,7 +275,8 @@
         "an approximation of the exact solution with errors depending on the problem data",
         "none of the above"
       ],
-      "answer": "exact"
+      "answer": "exact",
+      "explication": "For a cantilever Euler–Bernoulli beam with a tip load and uniform stiffness, the exact deflection shape is a cubic polynomial in the axial coordinate. A displacement-based formulation using an appropriate polynomial with two unknown coefficients can reproduce this exactly, giving an exact solution."
     },
     {
       "id": 24,
@@ -266,7 +289,8 @@
         "find the compatible and equilibrated solutions among all the possible independent stress and displacement fields",
         "none of the above"
       ],
-      "answer": "find the compatible solution among the equilibrated ones"
+      "answer": "find the compatible solution among the equilibrated ones",
+      "explication": "The Principle of Complementary Virtual Work starts from equilibrated stress fields and selects the displacement field that is compatible with kinematics and boundary conditions. In other words, it finds the compatible solution among the equilibrated ones."
     },
     {
       "id": 25,
@@ -274,7 +298,8 @@
       "thematic": "Plane strain",
       "question": "Whenever a slender structure works in plane strain the axial deformation is null.",
       "choices": null,
-      "answer": true
+      "answer": true,
+      "explication": "Plane strain assumes that the axial strain component along the out-of-plane direction is zero (for example εzz = 0), which means no axial deformation in that direction. For a slender body constrained in that way, the axial deformation is null, so the statement is true."
     },
     {
       "id": 26,
@@ -282,7 +307,8 @@
       "thematic": "Buckling",
       "question": "The critical buckling force for a simply supported compressed beam is inversely proportional to its slenderness (∝ 1/λ).",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "For a simply supported compressed beam (Euler column), the critical load scales with the square of the inverse of slenderness, Pcr ∝ 1/λ², not 1/λ. Therefore, saying it is inversely proportional to λ is incorrect."
     },
     {
       "id": 27,
@@ -290,7 +316,8 @@
       "thematic": "Constitutive laws",
       "question": "The relation σzz = E εzz is correct only for a state of plane stress.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "The uniaxial relation σzz = E εzz is valid whenever the material is loaded purely in the z-direction with no lateral constraint assumptions; it is not restricted to plane stress conditions. Hence the statement that it is correct only for plane stress is false."
     },
     {
       "id": 28,
@@ -305,7 +332,8 @@
         "transverse displacement and bending rotation prevented on two opposite boundary sides, transverse displacement prevented and bending rotation left free on the other two",
         "none of the above"
       ],
-      "answer": "transverse displacement prevented on all of its boundary sides, bending rotation left free"
+      "answer": "transverse displacement prevented on all of its boundary sides, bending rotation left free",
+      "explication": "A simply supported plate has its transverse displacement w prevented (w = 0) along the supported edges, but the bending rotations are free. If all edges are simply supported, this means w = 0 on all boundary sides with free rotations, matching the chosen answer."
     },
     {
       "id": 29,
@@ -321,7 +349,8 @@
         "the beam is able to withstand the torsional moment only if it is slender enough",
         "none of the above"
       ],
-      "answer": "the torsion is different from zero"
+      "answer": "the torsion is different from zero",
+      "explication": "A torsional moment applied to a thin-walled beam induces twist and corresponding shear flows in the walls, even without other loads. Thus, unless the torsional stiffness is infinite, torsion is different from zero, so the correct statement is that torsion is different from zero."
     },
     {
       "id": 30,
@@ -329,7 +358,8 @@
       "thematic": "Plates",
       "question": "Thin plates typically work in plane strain conditions.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "Thin plates usually carry in-plane loads under plane stress conditions, where the out-of-plane normal stress is negligible (σzz ≈ 0) while in-plane strains are not constrained. Plane strain is typical of thick or long bodies, not thin plates, so the statement is false."
     },
     {
       "id": 31,
@@ -337,7 +367,8 @@
       "thematic": "Finite elements",
       "question": "The stress field predicted by a FE solution is continuous.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "Standard displacement-based finite element formulations give continuous displacements across elements (C0 continuity) but stresses, being derived from displacement gradients, are generally discontinuous at element boundaries. Hence the FE-predicted stress field is not continuous, making the statement false."
     },
     {
       "id": 32,
@@ -345,7 +376,8 @@
       "thematic": "Beam mechanics",
       "question": "The cross section of a beam subject to shear has an out-of-plane warping.",
       "choices": null,
-      "answer": true
+      "answer": true,
+      "explication": "Shear loading causes non-uniform shear stresses and leads to warping of the cross-section out of its original plane. Therefore, a beam cross-section under shear typically exhibits out-of-plane warping, so the statement is true."
     },
     {
       "id": 33,
@@ -360,7 +392,8 @@
         "axial stress in the panels",
         "none of the above"
       ],
-      "answer": "axial stress in the rivet"
+      "answer": "axial stress in the rivet",
+      "explication": "In riveted joints, typical failure modes are shear in the rivet, shear in the panels, bearing in the rivet or panels, or net-section tension in the panels. Pure axial stress failure of the rivet itself is not a realistic in-plane failure mode for such a joint, so it cannot fail because of axial stress in the rivet."
     },
     {
       "id": 34,
@@ -375,7 +408,8 @@
         "any kind of panel",
         "none of the above"
       ],
-      "answer": "thin-walled beams"
+      "answer": "thin-walled beams",
+      "explication": "Thin-walled beams have relatively low shear stiffness in their walls and develop significant shear deformations even when slender, so shear deformability is important. For very slender compact beams, shear effects are usually less significant."
     },
     {
       "id": 35,
@@ -390,7 +424,8 @@
         "can be neglected",
         "none of the above"
       ],
-      "answer": "is equal to that of a corresponding compact section"
+      "answer": "is equal to that of a corresponding compact section",
+      "explication": "For a given material and total cross-sectional area, the axial stiffness EA depends only on E and the area A, not on how the material is distributed in the cross-section. A thin-walled section and a compact section with the same area therefore have the same axial stiffness."
     },
     {
       "id": 36,
@@ -398,7 +433,8 @@
       "thematic": "Plane strain",
       "question": "The assumption of plane strain implies that a component of stress is null.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "Plane strain assumes that one strain component (for example εzz) is zero, but all three normal stresses may be nonzero due to Poisson effects. Thus, it does not imply that any stress component is null, so the statement is false."
     },
     {
       "id": 37,
@@ -406,7 +442,8 @@
       "thematic": "Virtual work",
       "question": "The essential boundary conditions are satisfied in a weak sense by the Principle of Virtual Work.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "In the standard virtual work formulation, essential boundary conditions (displacements) are enforced directly on the trial and virtual displacement fields (strongly), while natural boundary conditions (tractions) enter in weak form. Therefore, the statement claiming that essential conditions are satisfied in a weak sense is false."
     },
     {
       "id": 38,
@@ -414,7 +451,8 @@
       "thematic": "Semi-monocoque theory",
       "question": "According to the semi-monocoque model, the axial stress σzz in the panels can be computed from the axial derivative of the shear stress.",
       "choices": null,
-      "answer": false
+      "answer": false,
+      "explication": "In semi-monocoque theory, axial stresses in panels arise mainly from axial and bending resultants distributed according to stiffness, not from the axial derivative of shear stress. That relation is not a correct constitutive or equilibrium equation, so the statement is false."
     },
     {
       "id": 39,
@@ -430,7 +468,8 @@
         "described by a quadratic polynomial function",
         "none of the above"
       ],
-      "answer": "higher at the extremities"
+      "answer": "higher at the extremities",
+      "explication": "As in other bonded joints, the load transfer in glued connections produces stress peaks at the edges of the overlap where the load enters the adhesive. Thus, the shear stress transmitted by a glued connection is higher at the extremities."
     },
     {
       "id": 40,
@@ -445,7 +484,8 @@
         "the through-the-thickness shear stress in a Mindlin shell model",
         "none of the above"
       ],
-      "answer": "riveted connections"
+      "answer": "riveted connections",
+      "explication": "Bearing stress is the local compressive contact stress between a fastener (such as a rivet) and the surrounding hole. It is therefore directly associated with riveted connections, not with glued joints or shell through-thickness shear."
     }
   ]
 }
