@@ -279,7 +279,196 @@
         "none of the above"
       ],
       "answer": "find the compatible solution among the equilibrated ones"
+    },
+    {
+      "id": 25,
+      "category": "TF",
+      "thematic": "Plane strain",
+      "question": "Whenever a slender structure works in plane strain the axial deformation is null.",
+      "choices": null,
+      "answer": true
+    },
+    {
+      "id": 26,
+      "category": "TF",
+      "thematic": "Buckling",
+      "question": "The critical buckling force for a simply supported compressed beam is inversely proportional to its slenderness (∝ 1/λ).",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 27,
+      "category": "TF",
+      "thematic": "Constitutive laws",
+      "question": "The relation σzz = E εzz is correct only for a state of plane stress.",
+      "choices": null,
+      "answer": false
+    },
+
+    {
+      "id": 28,
+      "category": "QCM",
+      "thematic": "Plate boundary conditions",
+      "question": "A “simply supported” plate has:",
+      "choices": [
+        "transverse displacement and bending rotation prevented on one of its boundary sides",
+        "transverse displacement and bending rotation prevented on all of its boundary sides",
+        "transverse displacement prevented on two opposite boundary sides, bending rotation left free",
+        "transverse displacement prevented on all of its boundary sides, bending rotation left free",
+        "transverse displacement and bending rotation prevented on two opposite boundary sides, transverse displacement prevented and bending rotation left free on the other two",
+        "none of the above"
+      ],
+      "answer": "transverse displacement prevented on all of its boundary sides, bending rotation left free"
+    },
+
+    {
+      "id": 29,
+      "category": "QCM",
+      "thematic": "Thin-walled torsion",
+      "question": "When a torsional moment is applied to a thin-walled beam, without any other load:",
+      "choices": [
+        "the shear flows are null",
+        "the torsion is null",
+        "the torsion is different from zero, but only if the cross-section is free to warp",
+        "the torsion is different from zero",
+        "the torsion is different from zero only if the transverse shear deformability is not negligible",
+        "the beam is able to withstand the torsional moment only if it is slender enough",
+        "none of the above"
+      ],
+      "answer": "the torsion is different from zero"
+    },
+
+    {
+      "id": 30,
+      "category": "TF",
+      "thematic": "Plates",
+      "question": "Thin plates typically work in plane strain conditions.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 31,
+      "category": "TF",
+      "thematic": "Finite elements",
+      "question": "The stress field predicted by a FE solution is continuous.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 32,
+      "category": "TF",
+      "thematic": "Beam mechanics",
+      "question": "The cross section of a beam subject to shear has an out-of-plane warping.",
+      "choices": null,
+      "answer": true
+    },
+
+    {
+      "id": 33,
+      "category": "QCM",
+      "thematic": "Riveted connections",
+      "question": "A riveted connection between two panels loaded in-plane cannot fail because of:",
+      "choices": [
+        "shear stress in the panels",
+        "shear stress in the rivet",
+        "axial stress in the rivet",
+        "bearing stress in the rivet",
+        "axial stress in the panels",
+        "none of the above"
+      ],
+      "answer": "axial stress in the rivet"
+    },
+
+    {
+      "id": 34,
+      "category": "QCM",
+      "thematic": "Shear deformability",
+      "question": "Shear deformability is important for:",
+      "choices": [
+        "slender compact cross-section beams",
+        "thin-walled beams",
+        "thin panels",
+        "any kind of beam",
+        "any kind of panel",
+        "none of the above"
+      ],
+      "answer": "thin-walled beams"
+    },
+
+    {
+      "id": 35,
+      "category": "QCM",
+      "thematic": "Axial stiffness",
+      "question": "The axial stiffness for a thin-walled beam:",
+      "choices": [
+        "is null",
+        "is generally larger with respect to a corresponding compact section",
+        "is generally smaller with respect to a corresponding compact section",
+        "is equal to that of a corresponding compact section",
+        "can be neglected",
+        "none of the above"
+      ],
+      "answer": "is equal to that of a corresponding compact section"
+    },
+
+    {
+      "id": 36,
+      "category": "TF",
+      "thematic": "Plane strain",
+      "question": "The assumption of plane strain implies that a component of stress is null.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 37,
+      "category": "TF",
+      "thematic": "Virtual work",
+      "question": "The essential boundary conditions are satisfied in a weak sense by the Principle of Virtual Work.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 38,
+      "category": "TF",
+      "thematic": "Semi-monocoque theory",
+      "question": "According to the semi-monocoque model, the axial stress σzz in the panels can be computed from the axial derivative of the shear stress.",
+      "choices": null,
+      "answer": false
+    },
+
+    {
+      "id": 39,
+      "category": "QCM",
+      "thematic": "Glued connections",
+      "question": "The shear stress transmitted by a glued connection is:",
+      "choices": [
+        "higher at the extremities",
+        "lower at the extremities",
+        "constant",
+        "described by a sin function",
+        "described by a cos function",
+        "described by a quadratic polynomial function",
+        "none of the above"
+      ],
+      "answer": "higher at the extremities"
+    },
+
+    {
+      "id": 40,
+      "category": "QCM",
+      "thematic": "Bearing stress",
+      "question": "The bearing stress is related to:",
+      "choices": [
+        "glued connections",
+        "riveted connections",
+        "the average shear stress in a semi-monocoque cross-section subject to constant torsional moment",
+        "the through-the-thickness shear stress in a Timoshenko shell model",
+        "the through-the-thickness shear stress in a Mindlin shell model",
+        "none of the above"
+      ],
+      "answer": "riveted connections"
     }
   ]
+
 }
 

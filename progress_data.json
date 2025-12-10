@@ -1,0 +1,56 @@
+{
+  "attempts": [
+    {
+      "question_id": 4,
+      "theme": "Continuum mechanics / Stress states",
+      "category": "QCM",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765385041.644608
+    },
+    {
+      "question_id": 6,
+      "theme": "Joints / Glued connections",
+      "category": "QCM",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765385041.645059
+    },
+    {
+      "question_id": 8,
+      "theme": "Buckling theory",
+      "category": "TF",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765385041.645702
+    },
+    {
+      "question_id": 12,
+      "theme": "Linear static FEM",
+      "category": "QCM",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765385041.6459131
+    },
+    {
+      "question_id": 20,
+      "theme": "Timoshenko beam",
+      "category": "TF",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765385041.6460512
+    },
+    {
+      "question_id": 1,
+      "theme": "Wing structures / Buckling",
+      "category": "TF",
+      "correct": false,
+      "source": "exam",
+      "ts": 1765385041.646194
+    }
+  ],
+  "goal": {
+    "target": 100.0,
+    "label": "Test"
+  }
+}
