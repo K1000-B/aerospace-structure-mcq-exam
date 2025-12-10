@@ -26,6 +26,35 @@ from tkinter import messagebox
 QuestionCategory = Literal["TF", "QCM"]
 
 
+def resource_path(filename: str) -> Path:
+    """Return path to bundled resources (py2app/pyinstaller) or local files."""
+    if getattr(sys, "frozen", False):
+        # In a frozen app, resources live in Contents/Resources
+        return Path(sys.executable).resolve().parent.parent / "Resources" / filename
+    return Path(__file__).parent / filename
+
+
+def user_data_path(filename: str) -> Path:
+    """User-writable location for persistent data."""
+    base = Path.home() / "Library" / "Application Support" / "MMC_QCM_Trainer"
+    base.mkdir(parents=True, exist_ok=True)
+    return base / filename
+
+
+def ensure_writable_resource(filename: str) -> Path:
+    """
+    Use a copy of bundled data in a user-writable location when frozen.
+    Keeps reading from the bundled file in dev.
+    """
+    bundled = resource_path(filename)
+    if getattr(sys, "frozen", False):
+        target = user_data_path(filename)
+        if not target.exists() and bundled.exists():
+            target.write_bytes(bundled.read_bytes())
+        return target
+    return bundled
+
+
 @dataclass
 class Question:
     id: int
@@ -266,7 +295,7 @@ class StatsManager:
 class QuizApp(tk.Tk):
     def __init__(self, json_path: str = "mmc_questions.json"):
         super().__init__()
-        self.json_path = json_path
+        self.json_path = ensure_writable_resource(json_path)
         self.title("MMC QCM Trainer")
         self.geometry("1000x650")
         self.minsize(900, 550)
@@ -298,7 +327,7 @@ class QuizApp(tk.Tk):
         self.exam_user_answers: List[Optional[Union[bool, str]]] = []
         self.timer_running: bool = False
         self.timer_start: float = 0.0
-        self.stats = StatsManager(Path(__file__).with_name("progress_data.json"))
+        self.stats = StatsManager(ensure_writable_resource("progress_data.json"))
         self.editor_processes: List[subprocess.Popen] = []
 
         # Load data + build UI
@@ -309,7 +338,7 @@ class QuizApp(tk.Tk):
 
     # ---------- Data loading ----------
 
-    def load_questions(self, json_path: str) -> None:
+    def load_questions(self, json_path: Union[str, Path]) -> None:
         """Load questions from JSON (root key 'questions') into dataclasses."""
         try:
             with open(json_path, "r", encoding="utf-8") as f:
@@ -735,7 +764,7 @@ class QuizApp(tk.Tk):
 
     def open_question_editor(self) -> None:
         """Launch the external question editor window."""
-        editor_path = Path(__file__).with_name("question_editor.py")
+        editor_path = resource_path("question_editor.py")
         if not editor_path.exists():
             messagebox.showerror("Éditeur de questions", "Le fichier question_editor.py est introuvable.")
             return

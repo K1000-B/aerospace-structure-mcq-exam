@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import List
 
@@ -15,12 +16,35 @@ from tkinter import messagebox, ttk
 QuestionCategory = str
 
 
+def resource_path(filename: str) -> Path:
+    """Return path to bundled resources (py2app/pyinstaller) or local files."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent.parent / "Resources" / filename
+    return Path(__file__).parent / filename
+
+
+def user_data_path(filename: str) -> Path:
+    base = Path.home() / "Library" / "Application Support" / "MMC_QCM_Trainer"
+    base.mkdir(parents=True, exist_ok=True)
+    return base / filename
+
+
+def ensure_writable_resource(filename: str) -> Path:
+    bundled = resource_path(filename)
+    if getattr(sys, "frozen", False):
+        target = user_data_path(filename)
+        if not target.exists() and bundled.exists():
+            target.write_bytes(bundled.read_bytes())
+        return target
+    return bundled
+
+
 class QuestionEditor(tk.Tk):
     """Collect new questions via a friendly form and append them to the JSON file."""
 
     def __init__(self, json_path: str = "mmc_questions.json") -> None:
         super().__init__()
-        self.json_path = Path(json_path)
+        self.json_path = ensure_writable_resource(json_path)
         self.title("MMC question editor")
         self.geometry("800x700")
         self.minsize(760, 620)
