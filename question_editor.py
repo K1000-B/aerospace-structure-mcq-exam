@@ -32,7 +32,7 @@ class QuestionEditor(tk.Tk):
         self.card = "#ffffff"
         self.border = "#e2e8f0"
         self.text = "#0f172a"
-        self.muted = "#475569"
+        self.muted = "#000000"
 
         self.configure(bg=self.bg)
 
@@ -206,7 +206,7 @@ class QuestionEditor(tk.Tk):
             text="Save question",
             command=self._on_save,
             bg=self.accent,
-            fg="white",
+            fg="black",
             bd=0,
             font=("Helvetica", 13, "bold"),
             padx=16,
