@@ -12,8 +12,7 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List, Optional, Union, Literal, Dict, Any
+from typing import List, Optional, Union, Literal
 
 import tkinter as tk
 from tkinter import messagebox
@@ -94,16 +93,23 @@ class StatsManager:
     def get_goal(self) -> Dict[str, Any]:
         return self.data.get("goal", {"target": None, "label": ""})
 
-    def compute_overall(self) -> Dict[str, Any]:
+    def _filtered_attempts(self, theme: Optional[str] = None) -> List[Dict[str, Any]]:
         attempts = self.data.get("attempts", [])
+        if theme is None or theme == "Tous":
+            return attempts
+        return [a for a in attempts if a.get("theme") == theme]
+
+    def compute_overall(self, theme: Optional[str] = None) -> Dict[str, Any]:
+        attempts = self._filtered_attempts(theme)
         total = len(attempts)
         correct = sum(1 for a in attempts if a.get("correct"))
         rate = (correct / total) * 100 if total else 0.0
         return {"total": total, "correct": correct, "rate": rate}
 
-    def theme_breakdown(self) -> Dict[str, Dict[str, float]]:
+    def theme_breakdown(self, *, theme: Optional[str] = None) -> Dict[str, Dict[str, float]]:
+        attempts = self._filtered_attempts(theme)
         results: Dict[str, Dict[str, float]] = {}
-        for attempt in self.data.get("attempts", []):
+        for attempt in attempts:
             theme = attempt.get("theme", "Unknown")
             results.setdefault(theme, {"total": 0, "correct": 0})
             results[theme]["total"] += 1
@@ -130,6 +136,23 @@ class StatsManager:
             sum(1 for a in previous if a.get("correct")) / window * 100
         )
         return recent_rate - previous_rate
+
+    def moving_success(self, window: int = 5, theme: Optional[str] = None) -> List[tuple[int, float]]:
+        attempts = sorted(
+            self._filtered_attempts(theme), key=lambda a: a.get("ts", 0)
+        )
+        if not attempts:
+            return []
+
+        rolling: List[int] = []
+        points: List[tuple[int, float]] = []
+        for idx, attempt in enumerate(attempts, start=1):
+            rolling.append(1 if attempt.get("correct") else 0)
+            if len(rolling) > window:
+                rolling.pop(0)
+            rate = (sum(rolling) / len(rolling)) * 100
+            points.append((idx, rate))
+        return points
 
 
 # ---------- Quiz application ----------
@@ -168,7 +191,6 @@ class QuizApp(tk.Tk):
         self.exam_user_answers: List[Optional[Union[bool, str]]] = []
         self.timer_running: bool = False
         self.timer_start: float = 0.0
-        self.stats = StatsManager(Path(json_path).with_name("progress_data.json"))
 
         # Load data + build UI
         self.load_questions(json_path)
@@ -387,6 +409,24 @@ class QuizApp(tk.Tk):
         stats_btn.grid(row=3, column=0, sticky="ew", padx=12, pady=(0, 12))
         self._add_hover_effect(stats_btn, self.accent_color, self.accent_hover)
 
+        dashboard_btn = tk.Button(
+            progress_card,
+            text="Ouvrir le dashboard",
+            command=self.show_dashboard,
+            bg="#0ea5e9",
+            fg="#0b2b1f",
+            bd=0,
+            font=("Helvetica", 11, "bold"),
+            activebackground="#0284c7",
+            activeforeground="#0b2b1f",
+            padx=10,
+            pady=6,
+            relief="flat",
+            cursor="hand2",
+        )
+        dashboard_btn.grid(row=4, column=0, sticky="ew", padx=12, pady=(0, 14))
+        self._add_hover_effect(dashboard_btn, "#0ea5e9", "#0284c7")
+
         # Right panel: quiz card
         quiz_card = tk.Frame(
             main,
@@ -513,8 +553,6 @@ class QuizApp(tk.Tk):
         )
         self.next_btn.grid(row=0, column=2, sticky="e")
         self._add_hover_effect(self.next_btn, "#10b981", "#0ea371")
-
-        self.update_progress_card()
 
     def _add_hover_effect(self, widget: tk.Widget, normal_color: str, hover_color: str) -> None:
         def on_enter(_event: tk.Event) -> None:  # type: ignore[type-arg]
@@ -725,6 +763,326 @@ class QuizApp(tk.Tk):
         )
         save_btn.grid(row=3, column=0, columnspan=2, sticky="e", pady=(8, 0))
 
+    def show_dashboard(self) -> None:
+        if hasattr(self, "dashboard_win") and self.dashboard_win.winfo_exists():
+            self.dashboard_win.focus_set()
+            self.refresh_dashboard()
+            return
+
+        win = tk.Toplevel(self)
+        self.dashboard_win = win
+        win.title("Dashboard interactif")
+        win.geometry("1020x720")
+        win.configure(bg=self.bg_color)
+
+        header = tk.Frame(win, bg=self.bg_color)
+        header.pack(fill="x", padx=18, pady=(16, 8))
+
+        tk.Label(
+            header,
+            text="Dashboard de progression",
+            font=("Helvetica", 18, "bold"),
+            fg=self.text_color,
+            bg=self.bg_color,
+        ).grid(row=0, column=0, sticky="w")
+
+        tk.Label(
+            header,
+            text="Visualisez vos performances globales, par thème et dans le temps. Filtrez les données pour explorer votre progression.",
+            font=("Helvetica", 11),
+            fg=self.muted_text,
+            bg=self.bg_color,
+            wraplength=760,
+            justify="left",
+        ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
+
+        controls = tk.Frame(win, bg=self.bg_color)
+        controls.pack(fill="x", padx=18, pady=(6, 12))
+
+        tk.Label(
+            controls, text="Filtrer par thématique :", bg=self.bg_color, fg=self.text_color
+        ).grid(row=0, column=0, sticky="w")
+
+        theme_choices = ["Tous"] + self.themes
+        self.dashboard_theme_var = tk.StringVar(value="Tous")
+        theme_menu = tk.OptionMenu(
+            controls, self.dashboard_theme_var, *theme_choices, command=lambda _v: self.refresh_dashboard()
+        )
+        theme_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
+        theme_menu.grid(row=0, column=1, sticky="w", padx=(8, 16))
+
+        refresh_btn = tk.Button(
+            controls,
+            text="Actualiser",
+            command=self.refresh_dashboard,
+            bg=self.accent_color,
+            fg="white",
+            bd=0,
+            font=("Helvetica", 10, "bold"),
+            activebackground=self.accent_hover,
+            activeforeground="white",
+            padx=8,
+            pady=6,
+            relief="flat",
+        )
+        refresh_btn.grid(row=0, column=2, sticky="w")
+        self._add_hover_effect(refresh_btn, self.accent_color, self.accent_hover)
+
+        grid = tk.Frame(win, bg=self.bg_color)
+        grid.pack(fill="both", expand=True, padx=18, pady=(0, 18))
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
+        grid.rowconfigure(0, weight=1)
+        grid.rowconfigure(1, weight=1)
+
+        # Overall donut chart
+        overall_card = tk.Frame(
+            grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
+        )
+        overall_card.grid(row=0, column=0, sticky="nsew", padx=(0, 12), pady=(0, 12))
+        overall_card.rowconfigure(1, weight=1)
+        tk.Label(
+            overall_card,
+            text="Réussite globale & objectif",
+            font=("Helvetica", 14, "bold"),
+            bg=self.card_color,
+            fg=self.text_color,
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
+        self.dashboard_overall_canvas = tk.Canvas(
+            overall_card, width=320, height=260, bg=self.card_color, highlightthickness=0
+        )
+        self.dashboard_overall_canvas.grid(row=1, column=0, sticky="nsew")
+
+        # Trend chart
+        trend_card = tk.Frame(
+            grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
+        )
+        trend_card.grid(row=0, column=1, sticky="nsew", padx=(12, 0), pady=(0, 12))
+        trend_card.rowconfigure(1, weight=1)
+        tk.Label(
+            trend_card,
+            text="Tendance de réussite (moyenne glissante)",
+            font=("Helvetica", 14, "bold"),
+            bg=self.card_color,
+            fg=self.text_color,
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
+        self.dashboard_trend_canvas = tk.Canvas(
+            trend_card, width=520, height=260, bg=self.card_color, highlightthickness=0
+        )
+        self.dashboard_trend_canvas.grid(row=1, column=0, sticky="nsew")
+
+        # Theme breakdown
+        theme_card = tk.Frame(
+            grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
+        )
+        theme_card.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(12, 0))
+        theme_card.rowconfigure(1, weight=1)
+        tk.Label(
+            theme_card,
+            text="Répartition par thématique",
+            font=("Helvetica", 14, "bold"),
+            bg=self.card_color,
+            fg=self.text_color,
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
+        self.dashboard_theme_canvas = tk.Canvas(
+            theme_card, width=920, height=260, bg=self.card_color, highlightthickness=0
+        )
+        self.dashboard_theme_canvas.grid(row=1, column=0, sticky="nsew")
+
+        self.refresh_dashboard()
+
+    def refresh_dashboard(self) -> None:
+        if not hasattr(self, "dashboard_win") or not self.dashboard_win.winfo_exists():
+            return
+
+        theme_filter = getattr(self, "dashboard_theme_var", tk.StringVar(value="Tous")).get()
+        overall = self.stats.compute_overall(theme_filter)
+        goal = self.stats.get_goal()
+        trend_points = self.stats.moving_success(theme=theme_filter)
+        breakdown = self.stats.theme_breakdown(theme=theme_filter if theme_filter != "Tous" else None)
+
+        self._draw_overall_card(self.dashboard_overall_canvas, overall, goal)
+        self._draw_trend_chart(self.dashboard_trend_canvas, trend_points)
+        self._draw_theme_bars(self.dashboard_theme_canvas, breakdown)
+
+    def _draw_overall_card(
+        self, canvas: tk.Canvas, overall: Dict[str, Any], goal: Dict[str, Any]
+    ) -> None:
+        canvas.delete("all")
+        width = int(canvas["width"])
+        height = int(canvas["height"])
+        cx, cy = width // 2, height // 2
+        radius = min(width, height) // 2 - 24
+        rate = overall.get("rate", 0)
+
+        canvas.create_oval(
+            cx - radius,
+            cy - radius,
+            cx + radius,
+            cy + radius,
+            outline="#e2e8f0",
+            width=18,
+        )
+        canvas.create_arc(
+            cx - radius,
+            cy - radius,
+            cx + radius,
+            cy + radius,
+            start=90,
+            extent=-(rate / 100) * 360,
+            style="arc",
+            outline=self.accent_color,
+            width=18,
+            capstyle="round",
+        )
+
+        canvas.create_text(
+            cx,
+            cy - 6,
+            text=f"{rate:.1f}%",
+            font=("Helvetica", 28, "bold"),
+            fill=self.text_color,
+        )
+        canvas.create_text(
+            cx,
+            cy + 26,
+            text=f"{overall.get('correct', 0)}/{overall.get('total', 0)} bonnes réponses",
+            font=("Helvetica", 11),
+            fill=self.muted_text,
+        )
+
+        target = goal.get("target")
+        if target is not None:
+            delta = target - rate
+            status = "Objectif atteint" if delta <= 0 else f"Encore {delta:.1f} pts"
+            canvas.create_text(
+                cx,
+                height - 26,
+                text=f"Objectif {target:.1f}% · {status}",
+                font=("Helvetica", 11, "bold"),
+                fill=self.correct_color if delta <= 0 else self.accent_color,
+            )
+        elif not overall.get("total"):
+            canvas.create_text(
+                cx,
+                height - 26,
+                text="Répondez à quelques questions pour voir vos progrès",
+                font=("Helvetica", 11),
+                fill=self.muted_text,
+            )
+
+    def _draw_trend_chart(self, canvas: tk.Canvas, points: List[tuple[int, float]]) -> None:
+        canvas.delete("all")
+        width = int(canvas["width"])
+        height = int(canvas["height"])
+        margin = 42
+
+        canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
+        if not points:
+            canvas.create_text(
+                width // 2,
+                height // 2,
+                text="Pas encore de données pour tracer une tendance.",
+                font=("Helvetica", 11),
+                fill=self.muted_text,
+            )
+            return
+
+        max_x = max(p[0] for p in points)
+        min_y, max_y = 0, 100
+        plot_w = width - margin * 2
+        plot_h = height - margin * 2
+
+        # Axes
+        canvas.create_line(margin, height - margin, width - margin, height - margin, fill="#cbd5e1")
+        canvas.create_line(margin, margin, margin, height - margin, fill="#cbd5e1")
+        for y_step in range(0, 101, 20):
+            y = height - margin - (y_step / (max_y - min_y)) * plot_h
+            canvas.create_line(margin - 6, y, width - margin, y, fill="#e2e8f0")
+            canvas.create_text(margin - 12, y, text=f"{y_step}%", anchor="e", fill=self.muted_text)
+
+        coords = []
+        for x_idx, rate in points:
+            x = margin + (x_idx / max(1, max_x)) * plot_w
+            y = height - margin - (rate / (max_y - min_y)) * plot_h
+            coords.append((x, y))
+
+        if len(coords) > 1:
+            canvas.create_line(*sum(coords, ()), fill=self.accent_color, width=3, smooth=True)
+        for x, y in coords[-15:]:
+            canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill=self.accent_color, outline="")
+
+        canvas.create_text(
+            width // 2,
+            margin - 12,
+            text="Évolution des réponses correctes (moyenne glissante sur 5 questions)",
+            font=("Helvetica", 11, "bold"),
+            fill=self.text_color,
+        )
+
+    def _draw_theme_bars(self, canvas: tk.Canvas, breakdown: Dict[str, Dict[str, float]]) -> None:
+        canvas.delete("all")
+        width = int(canvas["width"])
+        height = int(canvas["height"])
+        margin = 60
+        bar_gap = 16
+
+        canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
+        if not breakdown:
+            canvas.create_text(
+                width // 2,
+                height // 2,
+                text="Aucune tentative pour afficher la répartition.",
+                font=("Helvetica", 11),
+                fill=self.muted_text,
+            )
+            return
+
+        themes = list(sorted(breakdown.items(), key=lambda kv: kv[1].get("rate", 0), reverse=True))
+        max_rate = max(stats.get("rate", 0) for _, stats in themes) or 1
+        available_h = height - margin * 2
+        bar_height = max(14, min(36, (available_h - bar_gap * (len(themes) - 1)) / len(themes)))
+
+        for idx, (theme, stats) in enumerate(themes):
+            y = margin + idx * (bar_height + bar_gap)
+            rate = stats.get("rate", 0)
+            correct = int(stats.get("correct", 0))
+            total = int(stats.get("total", 0))
+            bar_width = (rate / max_rate) * (width - margin * 2)
+
+            canvas.create_rectangle(
+                margin,
+                y,
+                margin + bar_width,
+                y + bar_height,
+                fill=self.accent_color,
+                outline="",
+            )
+            canvas.create_rectangle(
+                margin,
+                y,
+                width - margin,
+                y + bar_height,
+                outline="#e2e8f0",
+                width=1,
+            )
+            canvas.create_text(
+                margin + 6,
+                y + bar_height / 2,
+                text=f"{theme} — {rate:.1f}% ({correct}/{total})",
+                anchor="w",
+                fill="white" if rate > 15 else self.text_color,
+                font=("Helvetica", 11, "bold"),
+            )
+
+        canvas.create_text(
+            width // 2,
+            margin - 16,
+            text="Classement par thématique (taux de réussite)",
+            font=("Helvetica", 11, "bold"),
+            fill=self.text_color,
+        )
+
     # ---------- Theme & navigation ----------
 
     def on_start_theme(self) -> None:
@@ -913,7 +1271,6 @@ class QuizApp(tk.Tk):
             else:
                 self.next_btn.config(state="normal")
         else:
-            is_correct = False
             if q.category == "TF":
                 # index 0 → True, index 1 → False
                 user_answer = (selection == 0)
@@ -921,7 +1278,6 @@ class QuizApp(tk.Tk):
 
                 if user_answer == correct:
                     self.score += 1
-                    is_correct = True
                     self.feedback_label.config(
                         text="Correct ✅ (True/False question)",
                         fg=self.correct_color,
@@ -936,21 +1292,21 @@ class QuizApp(tk.Tk):
                 # QCM: q.answer is the correct choice string
                 choices = q.choices or []
                 correct_str = str(q.answer)  # type: ignore[arg-type]
-                if 0 <= selection < len(choices):
-                    user_answer = choices[selection]
-                else:
-                    user_answer = ""
 
-                if user_answer == correct_str:
+                try:
+                    correct_index = choices.index(correct_str)
+                except ValueError:
+                    correct_index = -1
+
+                if selection == correct_index:
                     self.score += 1
-                    is_correct = True
                     self.feedback_label.config(
                         text="Correct ✅",
                         fg=self.correct_color,
                     )
                 else:
-                    if choices and correct_str in choices:
-                        correct_text = correct_str
+                    if 0 <= correct_index < len(choices):
+                        correct_text = choices[correct_index]
                     else:
                         correct_text = correct_str or "N/A"
                     self.feedback_label.config(
@@ -961,12 +1317,6 @@ class QuizApp(tk.Tk):
             self.update_score_label()
             self.submit_btn.config(state="disabled")
             self.next_btn.config(state="normal")
-            self.stats.record_attempt(
-                q,
-                is_correct,
-                "exam" if self.exam_mode else (self.current_theme or "mix"),
-            )
-            self.update_progress_card()
 
     def on_next(self) -> None:
         """Go to next question in current thematic."""
@@ -1031,8 +1381,6 @@ class QuizApp(tk.Tk):
             if is_correct:
                 correct_count += 1
 
-            self.stats.record_attempt(q, is_correct, "exam")
-
             corrections.append(
                 f"Q{idx + 1} ({q.category} - {q.thematic}): {q.question}\n"
                 f"  Votre réponse : {user_display}\n"
@@ -1051,8 +1399,6 @@ class QuizApp(tk.Tk):
         )
         self.submit_btn.config(state="disabled")
         self.next_btn.config(state="disabled")
-
-        self.update_progress_card()
 
         summary_window = tk.Toplevel(self)
         summary_window.title("Résultats de l'examen")
