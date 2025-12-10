@@ -47,6 +47,54 @@
       "correct": false,
       "source": "exam",
       "ts": 1765385041.646194
+    },
+    {
+      "question_id": 23,
+      "theme": "Euler-Bernoulli beam",
+      "category": "QCM",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765386605.7363222
+    },
+    {
+      "question_id": 5,
+      "theme": "Thin-walled structures / Shear flow",
+      "category": "QCM",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765386605.737226
+    },
+    {
+      "question_id": 38,
+      "theme": "Semi-monocoque theory",
+      "category": "TF",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765386605.738004
+    },
+    {
+      "question_id": 15,
+      "theme": "Thin-walled beams",
+      "category": "TF",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765386605.7382689
+    },
+    {
+      "question_id": 6,
+      "theme": "Joints / Glued connections",
+      "category": "QCM",
+      "correct": true,
+      "source": "exam",
+      "ts": 1765386605.7385118
+    },
+    {
+      "question_id": 21,
+      "theme": "Closed sections / Shear center",
+      "category": "TF",
+      "correct": false,
+      "source": "exam",
+      "ts": 1765386605.7387679
     }
   ],
   "goal": {

@@ -12,7 +12,8 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from typing import List, Optional, Union, Literal
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union, Literal
 
 import tkinter as tk
 from tkinter import messagebox
@@ -42,7 +43,7 @@ class Question:
 
 class StatsManager:
     def __init__(self, storage_path: Path):
-        self.storage_path = storage_path
+        self.storage_path = Path(storage_path)
         self.data: Dict[str, Any] = {
             "attempts": [],
             "goal": {"target": None, "label": ""},
@@ -191,10 +192,12 @@ class QuizApp(tk.Tk):
         self.exam_user_answers: List[Optional[Union[bool, str]]] = []
         self.timer_running: bool = False
         self.timer_start: float = 0.0
+        self.stats = StatsManager(Path(__file__).with_name("progress_data.json"))
 
         # Load data + build UI
         self.load_questions(json_path)
         self.build_ui()
+        self.update_progress_card()
         self.animate_background()
 
     # ---------- Data loading ----------
@@ -1247,6 +1250,7 @@ class QuizApp(tk.Tk):
         q = self.filtered_questions[self.current_index]
 
         self.total += 1
+        is_correct = False
 
         if self.exam_mode:
             # Save user answer without revealing correctness
@@ -1278,6 +1282,7 @@ class QuizApp(tk.Tk):
 
                 if user_answer == correct:
                     self.score += 1
+                    is_correct = True
                     self.feedback_label.config(
                         text="Correct ✅ (True/False question)",
                         fg=self.correct_color,
@@ -1300,6 +1305,7 @@ class QuizApp(tk.Tk):
 
                 if selection == correct_index:
                     self.score += 1
+                    is_correct = True
                     self.feedback_label.config(
                         text="Correct ✅",
                         fg=self.correct_color,
@@ -1317,6 +1323,9 @@ class QuizApp(tk.Tk):
             self.update_score_label()
             self.submit_btn.config(state="disabled")
             self.next_btn.config(state="normal")
+            self.stats.record_attempt(q, bool(is_correct), source="practice")
+            self.update_progress_card()
+            self.refresh_dashboard()
 
     def on_next(self) -> None:
         """Go to next question in current thematic."""
@@ -1380,6 +1389,7 @@ class QuizApp(tk.Tk):
 
             if is_correct:
                 correct_count += 1
+            self.stats.record_attempt(q, bool(is_correct), source="exam")
 
             corrections.append(
                 f"Q{idx + 1} ({q.category} - {q.thematic}): {q.question}\n"
@@ -1421,6 +1431,8 @@ class QuizApp(tk.Tk):
         text_widget.pack(fill="both", expand=True, padx=12, pady=(0, 12))
         text_widget.insert("1.0", "\n".join(corrections))
         text_widget.config(state="disabled")
+        self.update_progress_card()
+        self.refresh_dashboard()
 
 
 def main() -> None:
