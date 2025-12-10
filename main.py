@@ -46,10 +46,12 @@ class StatsManager:
         self.storage_path = Path(storage_path)
         self.data: Dict[str, Any] = {
             "attempts": [],
-            "goal": {"target": None, "label": ""},
+            "goals": [],
+            "active_goal_id": None,
         }
         self.load()
 
+    # ---------- Persistence ----------
     def load(self) -> None:
         if self.storage_path.exists():
             with self.storage_path.open("r", encoding="utf-8") as f:
@@ -61,10 +63,43 @@ class StatsManager:
                     # Corrupted file: reset to defaults
                     self.data = {
                         "attempts": [],
-                        "goal": {"target": None, "label": ""},
+                        "goals": [],
+                        "active_goal_id": None,
                     }
 
+        # Migration from legacy single-goal format
+        legacy_goal = self.data.get("goal")  # keep key for backward readability
+        goals = self.data.get("goals")
+        if not isinstance(goals, list):
+            goals = []
+        if goals == [] and isinstance(legacy_goal, dict):
+            try:
+                tgt = legacy_goal.get("target")
+            except AttributeError:
+                tgt = None
+            if tgt is not None:
+                goals.append(
+                    {
+                        "id": 1,
+                        "target": float(tgt),
+                        "label": legacy_goal.get("label", ""),
+                    }
+                )
+                self.data["active_goal_id"] = 1
+        self.data["goals"] = goals
+        self.data.setdefault("active_goal_id", None)
+        self.data.setdefault("attempts", [])
+        if goals and self.data.get("active_goal_id") is None:
+            self.data["active_goal_id"] = goals[0].get("id")
+
     def save(self) -> None:
+        # Keep the legacy "goal" key in sync with the active goal for compatibility
+        active_goal = self.get_goal()
+        self.data["goal"] = (
+            {"target": active_goal["target"], "label": active_goal.get("label", "")}
+            if active_goal
+            else {"target": None, "label": ""}
+        )
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         with self.storage_path.open("w", encoding="utf-8") as f:
             json.dump(self.data, f, ensure_ascii=False, indent=2)
@@ -87,12 +122,77 @@ class StatsManager:
         self.data.setdefault("attempts", []).append(payload)
         self.save()
 
-    def set_goal(self, target_percent: float, label: str = "") -> None:
-        self.data["goal"] = {"target": float(target_percent), "label": label}
+    # ---------- Goals ----------
+    def _next_goal_id(self) -> int:
+        existing = [g.get("id", 0) for g in self.data.get("goals", [])]
+        return (max(existing) if existing else 0) + 1
+
+    def list_goals(self) -> List[Dict[str, Any]]:
+        return list(self.data.get("goals", []))
+
+    def get_goal(self, goal_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        goals = self.data.get("goals", [])
+        target_id = goal_id if goal_id is not None else self.data.get("active_goal_id")
+        if target_id is None:
+            return None
+        for g in goals:
+            if g.get("id") == target_id:
+                return g
+        return None
+
+    def set_goal(self, target_percent: float, label: str = "") -> int:
+        """Legacy helper: create/update the active goal."""
+        if self.data.get("active_goal_id") is None and self.data.get("goals"):
+            active_id = self.data["goals"][0]["id"]
+        else:
+            active_id = self.data.get("active_goal_id") or self._next_goal_id()
+
+        existing = self.get_goal(active_id)
+        if existing:
+            existing["target"] = float(target_percent)
+            existing["label"] = label
+        else:
+            self.data.setdefault("goals", []).append(
+                {"id": active_id, "target": float(target_percent), "label": label}
+            )
+        self.data["active_goal_id"] = active_id
+        self.save()
+        return active_id
+
+    def add_goal(self, target_percent: float, label: str = "") -> int:
+        goal_id = self._next_goal_id()
+        self.data.setdefault("goals", []).append(
+            {"id": goal_id, "target": float(target_percent), "label": label}
+        )
+        if self.data.get("active_goal_id") is None:
+            self.data["active_goal_id"] = goal_id
+        self.save()
+        return goal_id
+
+    def update_goal(self, goal_id: int, target_percent: float, label: str = "") -> None:
+        goal = self.get_goal(goal_id)
+        if not goal:
+            return
+        goal["target"] = float(target_percent)
+        goal["label"] = label
         self.save()
 
-    def get_goal(self) -> Dict[str, Any]:
-        return self.data.get("goal", {"target": None, "label": ""})
+    def delete_goal(self, goal_id: int) -> None:
+        goals = self.data.get("goals", [])
+        self.data["goals"] = [g for g in goals if g.get("id") != goal_id]
+        if self.data.get("active_goal_id") == goal_id:
+            self.data["active_goal_id"] = self.data["goals"][0]["id"] if self.data["goals"] else None
+        self.save()
+
+    def set_active_goal(self, goal_id: Optional[int]) -> None:
+        if goal_id is None:
+            self.data["active_goal_id"] = None
+        elif any(g.get("id") == goal_id for g in self.data.get("goals", [])):
+            self.data["active_goal_id"] = goal_id
+        self.save()
+
+    def get_active_goal_id(self) -> Optional[int]:
+        return self.data.get("active_goal_id")
 
     def _filtered_attempts(self, theme: Optional[str] = None) -> List[Dict[str, Any]]:
         attempts = self.data.get("attempts", [])
@@ -644,21 +744,27 @@ class QuizApp(tk.Tk):
             )
         self.overall_progress_label.config(text=rate_text)
 
-        goal_target = goal.get("target")
-        if goal_target is None:
-            goal_text = "Objectif : non défini"
+        if not goal or goal.get("target") is None:
+            goal_text = "Objectif actif : aucun"
         else:
+            goal_target = goal.get("target")
             delta = goal_target - overall.get("rate", 0)
             if delta <= 0:
                 goal_text = f"Objectif atteint ({goal_target:.1f}%). Bravo !"
             else:
                 goal_text = f"Objectif : {goal_target:.1f}% (encore {delta:.1f} pts)"
 
-            label = goal.get("label") or ""
+            label = goal.get("label") or f"Objectif {goal.get('id')}"
             if label:
                 goal_text += f"\n“{label}”"
 
         self.goal_status_label.config(text=goal_text)
+
+    def _goal_display_text(self, goal: Dict[str, Any]) -> str:
+        label = goal.get("label") or "Objectif sans nom"
+        target = goal.get("target")
+        target_text = f"{target:.1f}%" if target is not None else "—"
+        return f"{label} ({target_text})"
 
     def _render_theme_stats(self) -> str:
         breakdown = self.stats.theme_breakdown()
@@ -673,14 +779,40 @@ class QuizApp(tk.Tk):
             )
         return "\n".join(lines)
 
+    def _refresh_dashboard_goal_menu(self, selected: Optional[int] = None) -> None:
+        """Keep the dashboard goal selector in sync with stored objectives."""
+        if not hasattr(self, "dashboard_goal_var") or not hasattr(self, "dashboard_goal_menu"):
+            return
+
+        try:
+            menu = self.dashboard_goal_menu["menu"]
+        except Exception:
+            return
+
+        goals = self.stats.list_goals()
+        menu.delete(0, "end")
+        menu.add_command(label="Aucun objectif", command=lambda v="none": self.dashboard_goal_var.set(v))
+
+        for g in goals:
+            gid = str(g.get("id"))
+            label = self._goal_display_text(g)
+            menu.add_command(label=label, command=lambda v=gid: self.dashboard_goal_var.set(v))
+
+        if selected is not None:
+            self.dashboard_goal_var.set(str(selected))
+        else:
+            active_id = self.stats.get_active_goal_id()
+            if active_id is not None:
+                self.dashboard_goal_var.set(str(active_id))
+            elif goals:
+                self.dashboard_goal_var.set(str(goals[0].get("id")))
+            else:
+                self.dashboard_goal_var.set("none")
+
     def show_stats_window(self) -> None:
         win = tk.Toplevel(self)
         win.title("Suivi des performances")
         win.geometry("520x520")
-
-        overall = self.stats.compute_overall()
-        progress_delta = self.stats.progress_speed()
-        goal = self.stats.get_goal()
 
         header = tk.Label(
             win,
@@ -689,20 +821,9 @@ class QuizApp(tk.Tk):
         )
         header.pack(pady=(12, 6))
 
-        if not overall["total"]:
-            summary_text = "Pas encore de données. Répondez à quelques questions pour activer le suivi."
-        else:
-            delta_text = (
-                f"{progress_delta:+.1f} points" if progress_delta is not None else "N/A"
-            )
-            summary_text = (
-                f"Taux de réussite global : {overall['rate']:.1f}%"
-                f" ({overall['correct']}/{overall['total']})\n"
-                f"Vitesse de progression (derniers 10 vs précédents) : {delta_text}"
-            )
         summary_label = tk.Label(
             win,
-            text=summary_text,
+            text="",
             justify="left",
             wraplength=480,
         )
@@ -710,50 +831,160 @@ class QuizApp(tk.Tk):
 
         theme_stats = tk.Label(
             win,
-            text=self._render_theme_stats(),
+            text="",
             justify="left",
             wraplength=480,
             anchor="w",
         )
         theme_stats.pack(padx=12, pady=(0, 10), anchor="w")
 
-        goal_frame = tk.LabelFrame(win, text="Objectif", padx=10, pady=8)
+        goal_frame = tk.LabelFrame(win, text="Objectifs", padx=10, pady=8)
         goal_frame.pack(fill="x", padx=12, pady=6)
-
-        tk.Label(goal_frame, text="Taux cible (%) :").grid(row=0, column=0, sticky="w")
-        goal_entry = tk.Entry(goal_frame)
-        goal_entry.grid(row=0, column=1, sticky="ew", padx=(6, 0))
-
-        tk.Label(goal_frame, text="Nom de l'objectif (optionnel) :").grid(
-            row=1, column=0, sticky="w", pady=(6, 0)
-        )
-        label_entry = tk.Entry(goal_frame)
-        label_entry.grid(row=1, column=1, sticky="ew", padx=(6, 0), pady=(6, 0))
         goal_frame.columnconfigure(1, weight=1)
 
-        if goal.get("target") is not None:
-            goal_entry.insert(0, f"{goal['target']:.1f}")
-        if goal.get("label"):
-            label_entry.insert(0, goal["label"])
+        tk.Label(goal_frame, text="Objectif affiché :", anchor="w").grid(row=0, column=0, sticky="w")
+        self.stats_goal_var = tk.StringVar(value="new")
+        goal_menu = tk.OptionMenu(goal_frame, self.stats_goal_var, "")
+        goal_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
+        goal_menu.grid(row=0, column=1, sticky="ew", padx=(6, 0))
+        tk.Label(goal_frame, text="(affiche le nom de l'objectif)", fg=self.muted_text).grid(
+            row=0, column=2, sticky="w", padx=(8, 0)
+        )
 
-        feedback_label = tk.Label(goal_frame, text="", fg=self.correct_color)
-        feedback_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(6, 0))
+        tk.Label(goal_frame, text="Taux cible (%) :").grid(row=1, column=0, sticky="w", pady=(6, 0))
+        goal_entry = tk.Entry(goal_frame)
+        goal_entry.grid(row=1, column=1, sticky="ew", padx=(6, 0), pady=(6, 0))
 
-        def save_goal() -> None:
+        tk.Label(goal_frame, text="Nom de l'objectif :").grid(row=2, column=0, sticky="w")
+        label_entry = tk.Entry(goal_frame)
+        label_entry.grid(row=2, column=1, sticky="ew", padx=(6, 0), pady=(4, 0))
+
+        feedback_label = tk.Label(goal_frame, text="", fg=self.correct_color, anchor="w", justify="left")
+        feedback_label.grid(row=4, column=0, columnspan=2, sticky="w", pady=(6, 0))
+
+        def current_goal_id() -> Optional[int]:
+            val = self.stats_goal_var.get()
+            if val in ("", "new", "none"):
+                return None
             try:
-                target = float(goal_entry.get())
-                self.stats.set_goal(target, label_entry.get().strip())
-                feedback_label.config(text="Objectif enregistré.", fg=self.correct_color)
-                self.update_progress_card()
+                return int(val)
             except ValueError:
-                feedback_label.config(
-                    text="Veuillez saisir un pourcentage valide.", fg=self.wrong_color
+                return None
+
+        def load_selected_goal() -> None:
+            goal_id = current_goal_id()
+            if goal_id is None:
+                goal_entry.delete(0, tk.END)
+                label_entry.delete(0, tk.END)
+                feedback_label.config(text="Nouveau objectif. Renseignez les champs puis enregistrez.")
+                return
+            goal = self.stats.get_goal(goal_id)
+            if goal:
+                goal_entry.delete(0, tk.END)
+                goal_entry.insert(0, f"{goal.get('target', 0):.1f}")
+                label_entry.delete(0, tk.END)
+                if goal.get("label"):
+                    label_entry.insert(0, goal.get("label"))
+                feedback_label.config(text=f"Objectif #{goal_id} chargé.")
+
+        def refresh_goal_menu(selected: Optional[str] = None) -> None:
+            goals = self.stats.list_goals()
+            menu = goal_menu["menu"]
+            menu.delete(0, "end")
+            menu.add_command(
+                label="Créer un nouvel objectif",
+                command=lambda v="new": (self.stats_goal_var.set(v), load_selected_goal()),
+            )
+            for g in goals:
+                gid = str(g.get("id"))
+                label = self._goal_display_text(g)
+                menu.add_command(
+                    label=label, command=lambda v=gid: (self.stats_goal_var.set(v), load_selected_goal())
                 )
 
+            active_id = self.stats.get_active_goal_id()
+            if selected is not None:
+                self.stats_goal_var.set(selected)
+            elif goals:
+                default_val = str(active_id) if active_id is not None else str(goals[0]["id"])
+                self.stats_goal_var.set(default_val)
+            else:
+                self.stats_goal_var.set("new")
+            load_selected_goal()
+            try:
+                sel_id = int(self.stats_goal_var.get())
+            except ValueError:
+                sel_id = None
+            self._refresh_dashboard_goal_menu(sel_id)
+
+        def save_goal(is_new: bool = False) -> None:
+            try:
+                target = float(goal_entry.get())
+            except ValueError:
+                feedback_label.config(text="Veuillez saisir un pourcentage valide.", fg=self.wrong_color)
+                return
+
+            label_val = label_entry.get().strip()
+            goal_id = current_goal_id()
+            if is_new or goal_id is None:
+                new_id = self.stats.add_goal(target, label_val)
+                refresh_goal_menu(str(new_id))
+                feedback_label.config(text="Objectif créé et sélectionné.", fg=self.correct_color)
+            else:
+                self.stats.update_goal(goal_id, target, label_val)
+                refresh_goal_menu(str(goal_id))
+                feedback_label.config(text="Objectif mis à jour.", fg=self.correct_color)
+            self.update_progress_card()
+            self.refresh_dashboard()
+            self._refresh_dashboard_goal_menu(current_goal_id())
+            refresh_summary()
+
+        def set_active_goal() -> None:
+            goal_id = current_goal_id()
+            if goal_id is None:
+                feedback_label.config(text="Sélectionnez un objectif existant.", fg=self.wrong_color)
+                return
+            self.stats.set_active_goal(goal_id)
+            feedback_label.config(text="Objectif actif mis à jour.", fg=self.correct_color)
+            self.update_progress_card()
+            self.refresh_dashboard()
+            self._refresh_dashboard_goal_menu(goal_id)
+            refresh_summary()
+
+        def delete_goal() -> None:
+            goal_id = current_goal_id()
+            if goal_id is None:
+                feedback_label.config(text="Aucun objectif à supprimer.", fg=self.wrong_color)
+                return
+            self.stats.delete_goal(goal_id)
+            refresh_goal_menu()
+            feedback_label.config(text="Objectif supprimé.", fg=self.correct_color)
+            self.update_progress_card()
+            self.refresh_dashboard()
+            self._refresh_dashboard_goal_menu()
+            refresh_summary()
+
+        btns = tk.Frame(goal_frame, bg=self.card_color)
+        btns.grid(row=3, column=0, columnspan=2, sticky="e", pady=(8, 0))
+
+        create_btn = tk.Button(
+            btns,
+            text="Nouveau",
+            command=lambda: (self.stats_goal_var.set("new"), load_selected_goal()),
+            bg="#e0f2fe",
+            fg=self.text_color,
+            bd=0,
+            font=("Helvetica", 10, "bold"),
+            padx=8,
+            pady=6,
+            relief="flat",
+        )
+        create_btn.grid(row=0, column=0, padx=(0, 6))
+
         save_btn = tk.Button(
-            goal_frame,
-            text="Enregistrer l'objectif",
-            command=save_goal,
+            btns,
+            text="Enregistrer",
+            command=lambda: save_goal(is_new=False),
             bg=self.accent_color,
             fg="white",
             bd=0,
@@ -764,7 +995,90 @@ class QuizApp(tk.Tk):
             pady=6,
             relief="flat",
         )
-        save_btn.grid(row=3, column=0, columnspan=2, sticky="e", pady=(8, 0))
+        save_btn.grid(row=0, column=1, padx=(0, 6))
+        self._add_hover_effect(save_btn, self.accent_color, self.accent_hover)
+
+        add_btn = tk.Button(
+            btns,
+            text="Créer",
+            command=lambda: save_goal(is_new=True),
+            bg="#0ea5e9",
+            fg="#0b2b1f",
+            bd=0,
+            font=("Helvetica", 10, "bold"),
+            activebackground="#0284c7",
+            activeforeground="#0b2b1f",
+            padx=8,
+            pady=6,
+            relief="flat",
+        )
+        add_btn.grid(row=0, column=2, padx=(0, 6))
+        self._add_hover_effect(add_btn, "#0ea5e9", "#0284c7")
+
+        activate_btn = tk.Button(
+            btns,
+            text="Définir comme actif",
+            command=set_active_goal,
+            bg="#10b981",
+            fg="#0b2b1f",
+            bd=0,
+            font=("Helvetica", 10, "bold"),
+            activebackground="#059669",
+            activeforeground="#0b2b1f",
+            padx=8,
+            pady=6,
+            relief="flat",
+        )
+        activate_btn.grid(row=0, column=3, padx=(0, 6))
+        self._add_hover_effect(activate_btn, "#10b981", "#059669")
+
+        delete_btn = tk.Button(
+            btns,
+            text="Supprimer",
+            command=delete_goal,
+            bg="#fca5a5",
+            fg="#7f1d1d",
+            bd=0,
+            font=("Helvetica", 10, "bold"),
+            activebackground="#ef4444",
+            activeforeground="white",
+            padx=8,
+            pady=6,
+            relief="flat",
+        )
+        delete_btn.grid(row=0, column=4)
+        self._add_hover_effect(delete_btn, "#fca5a5", "#ef4444")
+
+        def refresh_summary() -> None:
+            overall = self.stats.compute_overall()
+            progress_delta = self.stats.progress_speed()
+
+            if not overall["total"]:
+                summary_text = "Pas encore de données. Répondez à quelques questions pour activer le suivi."
+            else:
+                delta_text = (
+                    f"{progress_delta:+.1f} points" if progress_delta is not None else "N/A"
+                )
+                summary_text = (
+                    f"Taux de réussite global : {overall['rate']:.1f}%"
+                    f" ({overall['correct']}/{overall['total']})\n"
+                    f"Vitesse de progression (derniers 10 vs précédents) : {delta_text}"
+                )
+            summary_label.config(text=summary_text)
+            theme_stats.config(text=self._render_theme_stats())
+
+            goal_id = current_goal_id()
+            goal = self.stats.get_goal(goal_id) if goal_id is not None else self.stats.get_goal()
+            if goal and goal.get("target") is not None:
+                feedback_label.config(
+                    text=f"Objectif affiché : {self._goal_display_text(goal)}",
+                    fg=self.correct_color,
+                )
+            elif self.stats.list_goals():
+                feedback_label.config(text="Sélectionnez ou créez un objectif.", fg=self.muted_text)
+
+        refresh_goal_menu()
+        refresh_summary()
 
     def show_dashboard(self) -> None:
         if hasattr(self, "dashboard_win") and self.dashboard_win.winfo_exists():
@@ -814,6 +1128,15 @@ class QuizApp(tk.Tk):
         theme_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
         theme_menu.grid(row=0, column=1, sticky="w", padx=(8, 16))
 
+        tk.Label(
+            controls, text="Objectif affiché :", bg=self.bg_color, fg=self.text_color
+        ).grid(row=0, column=2, sticky="w")
+        self.dashboard_goal_var = tk.StringVar(value="none")
+        self.dashboard_goal_menu = tk.OptionMenu(controls, self.dashboard_goal_var, "")
+        self.dashboard_goal_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
+        self.dashboard_goal_menu.grid(row=0, column=3, sticky="w", padx=(8, 16))
+        self.dashboard_goal_var.trace_add("write", lambda *_: self.refresh_dashboard())
+
         refresh_btn = tk.Button(
             controls,
             text="Actualiser",
@@ -828,8 +1151,9 @@ class QuizApp(tk.Tk):
             pady=6,
             relief="flat",
         )
-        refresh_btn.grid(row=0, column=2, sticky="w")
+        refresh_btn.grid(row=0, column=4, sticky="w")
         self._add_hover_effect(refresh_btn, self.accent_color, self.accent_hover)
+        controls.columnconfigure(4, weight=1)
 
         grid = tk.Frame(win, bg=self.bg_color)
         grid.pack(fill="both", expand=True, padx=18, pady=(0, 18))
@@ -892,6 +1216,7 @@ class QuizApp(tk.Tk):
         )
         self.dashboard_theme_canvas.grid(row=1, column=0, sticky="nsew")
 
+        self._refresh_dashboard_goal_menu()
         self.refresh_dashboard()
 
     def refresh_dashboard(self) -> None:
@@ -899,8 +1224,22 @@ class QuizApp(tk.Tk):
             return
 
         theme_filter = getattr(self, "dashboard_theme_var", tk.StringVar(value="Tous")).get()
+        goal_val = getattr(self, "dashboard_goal_var", tk.StringVar(value="none")).get()
+        pre_selected_goal_id = None
+        try:
+            pre_selected_goal_id = int(goal_val) if goal_val not in ("none", "") else None
+        except ValueError:
+            pre_selected_goal_id = None
+
+        self._refresh_dashboard_goal_menu(pre_selected_goal_id)
+        goal_val = getattr(self, "dashboard_goal_var", tk.StringVar(value="none")).get()
+        try:
+            goal_id = int(goal_val) if goal_val not in ("none", "") else None
+        except ValueError:
+            goal_id = None
+
         overall = self.stats.compute_overall(theme_filter)
-        goal = self.stats.get_goal()
+        goal = self.stats.get_goal(goal_id) if goal_id is not None else self.stats.get_goal()
         trend_points = self.stats.moving_success(theme=theme_filter)
         breakdown = self.stats.theme_breakdown(theme=theme_filter if theme_filter != "Tous" else None)
 
@@ -909,7 +1248,7 @@ class QuizApp(tk.Tk):
         self._draw_theme_bars(self.dashboard_theme_canvas, breakdown)
 
     def _draw_overall_card(
-        self, canvas: tk.Canvas, overall: Dict[str, Any], goal: Dict[str, Any]
+        self, canvas: tk.Canvas, overall: Dict[str, Any], goal: Optional[Dict[str, Any]]
     ) -> None:
         canvas.delete("all")
         width = int(canvas["width"])
@@ -917,6 +1256,7 @@ class QuizApp(tk.Tk):
         cx, cy = width // 2, height // 2
         radius = min(width, height) // 2 - 24
         rate = overall.get("rate", 0)
+        total = overall.get("total", 0)
 
         canvas.create_oval(
             cx - radius,
@@ -936,7 +1276,6 @@ class QuizApp(tk.Tk):
             style="arc",
             outline=self.accent_color,
             width=18,
-            capstyle="round",
         )
 
         canvas.create_text(
@@ -954,23 +1293,32 @@ class QuizApp(tk.Tk):
             fill=self.muted_text,
         )
 
-        target = goal.get("target")
+        target = goal.get("target") if goal else None
+        goal_label = self._goal_display_text(goal) if goal else "Aucun objectif"
         if target is not None:
             delta = target - rate
             status = "Objectif atteint" if delta <= 0 else f"Encore {delta:.1f} pts"
             canvas.create_text(
                 cx,
                 height - 26,
-                text=f"Objectif {target:.1f}% · {status}",
+                text=f"{goal_label} · {status}",
                 font=("Helvetica", 11, "bold"),
                 fill=self.correct_color if delta <= 0 else self.accent_color,
             )
-        elif not overall.get("total"):
+        elif not total:
             canvas.create_text(
                 cx,
                 height - 26,
                 text="Répondez à quelques questions pour voir vos progrès",
                 font=("Helvetica", 11),
+                fill=self.muted_text,
+            )
+        else:
+            canvas.create_text(
+                cx,
+                height - 26,
+                text=f"{goal_label}",
+                font=("Helvetica", 11, "bold"),
                 fill=self.muted_text,
             )
 

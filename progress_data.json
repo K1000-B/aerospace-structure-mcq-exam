@@ -97,6 +97,14 @@
       "ts": 1765386605.7387679
     }
   ],
+  "goals": [
+    {
+      "id": 1,
+      "target": 100.0,
+      "label": "Test"
+    }
+  ],
+  "active_goal_id": 1,
   "goal": {
     "target": 100.0,
     "label": "Test"
