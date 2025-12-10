@@ -38,7 +38,6 @@ class QuestionEditor(tk.Tk):
 
         self.category_var = tk.StringVar(value="TF")
         self.thematic_var = tk.StringVar()
-        self.question_text = tk.Text(self, height=7, wrap="word", font=("Helvetica", 11))
         self.tf_answer_var = tk.BooleanVar(value=True)
         self.qcm_answer_var = tk.StringVar(value="")
         self.choice_entries: List[tk.Entry] = []
@@ -168,6 +167,7 @@ class QuestionEditor(tk.Tk):
         # Question body
         question_frame = tk.Frame(container, bg=self.card)
         question_frame.grid(row=2, column=0, sticky="ew", padx=16, pady=8)
+        question_frame.columnconfigure(0, weight=1)
 
         tk.Label(
             question_frame,
@@ -175,9 +175,19 @@ class QuestionEditor(tk.Tk):
             font=("Helvetica", 12, "bold"),
             fg=self.text,
             bg=self.card,
-        ).pack(anchor="w")
+        ).grid(row=0, column=0, sticky="w")
 
-        self.question_text.pack(in_=question_frame, fill="both", expand=True, pady=(6, 0))
+        self.question_text = tk.Text(
+            question_frame,
+            height=7,
+            wrap="word",
+            font=("Helvetica", 11),
+            highlightthickness=1,
+            highlightbackground=self.border,
+            relief="flat",
+        )
+        self.question_text.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        self.question_text.focus_set()
 
         # Frames that swap based on category
         self.tf_frame = tk.Frame(container, bg=self.card)
@@ -289,6 +299,7 @@ class QuestionEditor(tk.Tk):
         entry = tk.Entry(row, font=("Helvetica", 11))
         entry.insert(0, value)
         entry.grid(row=0, column=0, sticky="ew")
+        entry.bind("<KeyRelease>", lambda _evt: self._refresh_answer_menu())
         self.choice_entries.append(entry)
 
         remove_btn = tk.Button(
@@ -303,6 +314,7 @@ class QuestionEditor(tk.Tk):
             cursor="hand2",
         )
         remove_btn.grid(row=0, column=1, padx=(6, 0))
+        self._refresh_answer_menu()
 
     def _remove_choice_field(self, entry: tk.Entry, row: tk.Frame) -> None:
         entry.destroy()
@@ -311,9 +323,12 @@ class QuestionEditor(tk.Tk):
         self._refresh_answer_menu()
 
     def _refresh_answer_menu(self) -> None:
+        previous = self.qcm_answer_var.get()
         choices = [c.get().strip() for c in self.choice_entries if c.get().strip()]
         self.answer_menu["values"] = choices
-        if choices:
+        if previous in choices:
+            self.qcm_answer_var.set(previous)
+        elif choices:
             self.qcm_answer_var.set(choices[0])
         else:
             self.qcm_answer_var.set("")
@@ -326,6 +341,7 @@ class QuestionEditor(tk.Tk):
             self.tf_frame.grid(row=3, column=0, sticky="w", padx=0, pady=(2, 0))
         else:
             self.qcm_frame.grid(row=3, column=0, sticky="ew", padx=0, pady=(2, 0))
+            self._refresh_answer_menu()
 
     def _refresh_next_id_label(self) -> None:
         total = len(self.questions)
@@ -392,6 +408,7 @@ class QuestionEditor(tk.Tk):
         self._refresh_answer_menu()
 
         self._show_category_fields("TF")
+        self.question_text.focus_set()
 
 
 if __name__ == "__main__":
