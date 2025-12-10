@@ -11,6 +11,8 @@ from __future__ import annotations
 import json
 import random
 import time
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Literal
@@ -261,6 +263,7 @@ class StatsManager:
 class QuizApp(tk.Tk):
     def __init__(self, json_path: str = "mmc_questions.json"):
         super().__init__()
+        self.json_path = json_path
         self.title("MMC QCM Trainer")
         self.geometry("1000x650")
         self.minsize(900, 550)
@@ -293,6 +296,7 @@ class QuizApp(tk.Tk):
         self.timer_running: bool = False
         self.timer_start: float = 0.0
         self.stats = StatsManager(Path(__file__).with_name("progress_data.json"))
+        self.editor_processes: List[subprocess.Popen] = []
 
         # Load data + build UI
         self.load_questions(json_path)
@@ -330,10 +334,22 @@ class QuizApp(tk.Tk):
 
             # Unique thematics
             self.themes = sorted({q.thematic for q in self.questions})
+            self._refresh_theme_listbox()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load questions:\n{e}")
             self.destroy()
+
+    def refresh_questions_from_file(self) -> None:
+        """Reload questions after edits in the external editor."""
+        prev_theme = self.current_theme
+        self.load_questions(self.json_path)
+        if prev_theme and prev_theme in self.themes:
+            self.current_theme = prev_theme
+        else:
+            self.current_theme = None
+            self.current_theme_label.config(text="No thematic selected")
+        self.refresh_dashboard()
 
     # ---------- UI building ----------
 
@@ -413,9 +429,7 @@ class QuizApp(tk.Tk):
             font=("Helvetica", 11),
         )
         self.theme_listbox.grid(row=1, column=0, sticky="nsew", padx=16, pady=(0, 8))
-
-        for t in self.themes:
-            self.theme_listbox.insert(tk.END, t)
+        self._refresh_theme_listbox()
 
         start_theme_btn = tk.Button(
             left_panel,
@@ -453,6 +467,24 @@ class QuizApp(tk.Tk):
         exam_btn.grid(row=3, column=0, sticky="ew", padx=16, pady=(0, 16))
         self._add_hover_effect(exam_btn, "#0ea5e9", "#0284c7")
 
+        question_editor_btn = tk.Button(
+            left_panel,
+            text="Ajouter des questions",
+            command=self.open_question_editor,
+            bg="#f97316",
+            fg="#0b2b1f",
+            bd=0,
+            font=("Helvetica", 11, "bold"),
+            activebackground="#ea580c",
+            activeforeground="#0b2b1f",
+            padx=12,
+            pady=8,
+            relief="flat",
+            cursor="hand2",
+        )
+        question_editor_btn.grid(row=4, column=0, sticky="ew", padx=16, pady=(0, 16))
+        self._add_hover_effect(question_editor_btn, "#f97316", "#ea580c")
+
         progress_card = tk.Frame(
             left_panel,
             bg="#eef2ff",
@@ -460,7 +492,7 @@ class QuizApp(tk.Tk):
             highlightthickness=1,
             highlightbackground=self.card_border,
         )
-        progress_card.grid(row=4, column=0, sticky="nsew", padx=16, pady=(0, 16))
+        progress_card.grid(row=5, column=0, sticky="nsew", padx=16, pady=(0, 16))
         progress_card.columnconfigure(0, weight=1)
 
         progress_title = tk.Label(
@@ -656,6 +688,60 @@ class QuizApp(tk.Tk):
         )
         self.next_btn.grid(row=0, column=2, sticky="e")
         self._add_hover_effect(self.next_btn, "#10b981", "#0ea371")
+
+    def _refresh_theme_listbox(self) -> None:
+        """Keep the theme selector in sync with loaded questions."""
+        if not hasattr(self, "theme_listbox"):
+            return
+        current_selection = None
+        try:
+            sel = self.theme_listbox.curselection()
+            if sel:
+                current_selection = self.theme_listbox.get(sel[0])
+        except Exception:
+            current_selection = None
+
+        self.theme_listbox.delete(0, tk.END)
+        for t in self.themes:
+            self.theme_listbox.insert(tk.END, t)
+
+        if current_selection and current_selection in self.themes:
+            idx = self.themes.index(current_selection)
+            self.theme_listbox.selection_set(idx)
+            self.theme_listbox.see(idx)
+
+    def open_question_editor(self) -> None:
+        """Launch the external question editor window."""
+        editor_path = Path(__file__).with_name("question_editor.py")
+        if not editor_path.exists():
+            messagebox.showerror("Éditeur de questions", "Le fichier question_editor.py est introuvable.")
+            return
+        try:
+            proc = subprocess.Popen([sys.executable, str(editor_path)])
+            self.editor_processes.append(proc)
+            # Poll the editor process to reload questions once it exits
+            self.after(1500, self._watch_question_editor)
+        except Exception as exc:  # pragma: no cover - UI only
+            messagebox.showerror("Éditeur de questions", f"Impossible d'ouvrir l'éditeur : {exc}")
+
+    def _watch_question_editor(self) -> None:
+        """Reload questions when the external editor window is closed."""
+        if not self.editor_processes:
+            return
+        alive = []
+        changed = False
+        for proc in self.editor_processes:
+            if proc.poll() is None:
+                alive.append(proc)
+            else:
+                changed = True
+        self.editor_processes = alive
+
+        if changed:
+            self.refresh_questions_from_file()
+
+        if self.editor_processes:
+            self.after(1500, self._watch_question_editor)
 
     def _add_hover_effect(self, widget: tk.Widget, normal_color: str, hover_color: str) -> None:
         def on_enter(_event: tk.Event) -> None:  # type: ignore[type-arg]
@@ -1526,7 +1612,7 @@ class QuizApp(tk.Tk):
         q = self.filtered_questions[self.current_index]
 
         self.question_label.config(
-            text=f"Q{self.current_index + 1}: {q.question}"
+            text=f"Q{self.current_index + 1} (ID {q.id}): {q.question}"
         )
         self.category_label.config(text=f"Category: {q.category}")
 

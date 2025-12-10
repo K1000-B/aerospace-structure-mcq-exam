@@ -69,7 +69,6 @@
       ],
       "answer": "higher at the extremities"
     },
-
     {
       "id": 7,
       "category": "TF",
@@ -94,7 +93,6 @@
       "choices": null,
       "answer": false
     },
-
     {
       "id": 10,
       "category": "QCM",
@@ -110,7 +108,6 @@
       ],
       "answer": "a failure mode of thin-walled compressed beam"
     },
-
     {
       "id": 11,
       "category": "QCM",
@@ -125,7 +122,6 @@
       ],
       "answer": "has quadratic convergence of the stress with respect to h"
     },
-
     {
       "id": 12,
       "category": "QCM",
@@ -141,7 +137,6 @@
       ],
       "answer": "none of the above"
     },
-
     {
       "id": 13,
       "category": "TF",
@@ -166,7 +161,6 @@
       "choices": null,
       "answer": false
     },
-
     {
       "id": 16,
       "category": "QCM",
@@ -182,7 +176,6 @@
       ],
       "answer": "the flows equilibrating the load introduced by the rib"
     },
-
     {
       "id": 17,
       "category": "QCM",
@@ -196,7 +189,6 @@
       ],
       "answer": "is used to impose the equilibrium"
     },
-
     {
       "id": 18,
       "category": "QCM",
@@ -212,7 +204,6 @@
       ],
       "answer": "can be obtained, up to a rigid body motion, after constraining the structure isostatically"
     },
-
     {
       "id": 19,
       "category": "TF",
@@ -237,7 +228,6 @@
       "choices": null,
       "answer": false
     },
-
     {
       "id": 22,
       "category": "QCM",
@@ -252,7 +242,6 @@
       ],
       "answer": "always"
     },
-
     {
       "id": 23,
       "category": "QCM",
@@ -266,7 +255,6 @@
       ],
       "answer": "exact"
     },
-
     {
       "id": 24,
       "category": "QCM",
@@ -304,7 +292,6 @@
       "choices": null,
       "answer": false
     },
-
     {
       "id": 28,
       "category": "QCM",
@@ -320,7 +307,6 @@
       ],
       "answer": "transverse displacement prevented on all of its boundary sides, bending rotation left free"
     },
-
     {
       "id": 29,
       "category": "QCM",
@@ -337,7 +323,6 @@
       ],
       "answer": "the torsion is different from zero"
     },
-
     {
       "id": 30,
       "category": "TF",
@@ -362,7 +347,6 @@
       "choices": null,
       "answer": true
     },
-
     {
       "id": 33,
       "category": "QCM",
@@ -378,7 +362,6 @@
       ],
       "answer": "axial stress in the rivet"
     },
-
     {
       "id": 34,
       "category": "QCM",
@@ -394,7 +377,6 @@
       ],
       "answer": "thin-walled beams"
     },
-
     {
       "id": 35,
       "category": "QCM",
@@ -410,7 +392,6 @@
       ],
       "answer": "is equal to that of a corresponding compact section"
     },
-
     {
       "id": 36,
       "category": "TF",
@@ -435,7 +416,6 @@
       "choices": null,
       "answer": false
     },
-
     {
       "id": 39,
       "category": "QCM",
@@ -452,7 +432,6 @@
       ],
       "answer": "higher at the extremities"
     },
-
     {
       "id": 40,
       "category": "QCM",
@@ -469,6 +448,4 @@
       "answer": "riveted connections"
     }
   ]
-
 }
-

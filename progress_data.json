@@ -95,6 +95,46 @@
       "correct": false,
       "source": "exam",
       "ts": 1765386605.7387679
+    },
+    {
+      "question_id": 11,
+      "theme": "Finite elements / Convergence",
+      "category": "QCM",
+      "correct": true,
+      "source": "practice",
+      "ts": 1765388609.2495449
+    },
+    {
+      "question_id": 18,
+      "theme": "Linear static FEM",
+      "category": "QCM",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765388623.627657
+    },
+    {
+      "question_id": 12,
+      "theme": "Linear static FEM",
+      "category": "QCM",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765388629.210772
+    },
+    {
+      "question_id": 12,
+      "theme": "Linear static FEM",
+      "category": "QCM",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765388634.521343
+    },
+    {
+      "question_id": 3,
+      "theme": "Finite Elements / Timoshenko beam",
+      "category": "TF",
+      "correct": false,
+      "source": "practice",
+      "ts": 1765388659.747305
     }
   ],
   "goals": [
