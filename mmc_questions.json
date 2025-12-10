@@ -68,6 +68,218 @@
         "none of the above"
       ],
       "answer": "higher at the extremities"
+    },
+
+    {
+      "id": 7,
+      "category": "TF",
+      "thematic": "Beam bending",
+      "question": "The axial stress of beam transmitting a constant bending moment Mx does not depend on the material elastic modulus E.",
+      "choices": null,
+      "answer": true
+    },
+    {
+      "id": 8,
+      "category": "TF",
+      "thematic": "Buckling theory",
+      "question": "The Timoshenko model is used to compute the critical buckling stress of a simply supported compressed plate.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 9,
+      "category": "TF",
+      "thematic": "Finite elements / Shape functions",
+      "question": "Hermitian shape functions are C2 (continuous, and with continuous first and second derivatives).",
+      "choices": null,
+      "answer": false
+    },
+
+    {
+      "id": 10,
+      "category": "QCM",
+      "thematic": "Stability / Crippling",
+      "question": "“Crippling” is:",
+      "choices": [
+        "a failure mode of thin-walled compressed beam",
+        "a failure mode of compact compressed beam",
+        "a failure mode affecting the fuselage of Boeing 737 MAX",
+        "a failure mode of railways",
+        "a special design technique preventing the buckling of beams",
+        "none of the above"
+      ],
+      "answer": "a failure mode of thin-walled compressed beam"
+    },
+
+    {
+      "id": 11,
+      "category": "QCM",
+      "thematic": "Finite elements / Convergence",
+      "question": "Assume that the solution of a given three dimensional elastic problem has a finite H10 norm; an approximated solution, obtained with quadratic finite elements with average dimension h:",
+      "choices": [
+        "has quadratic convergence of the stress with respect to h",
+        "has cubic convergence of the stress with respect to h",
+        "has linear convergence of the displacements with respect to h",
+        "has quadratic convergence of the displacements with respect to h",
+        "none of the above"
+      ],
+      "answer": "has quadratic convergence of the stress with respect to h"
+    },
+
+    {
+      "id": 12,
+      "category": "QCM",
+      "thematic": "Linear static FEM",
+      "question": "A structure is modeled using finite elements. It is unconstrained and subjected to a set of loads in self-equilibrium. The solution of the linear static problem:",
+      "choices": [
+        "is stress-free",
+        "can be computed, up to a rigid body motion, after constraining the structure isostatically",
+        "can be computed only if the loads are concentrated",
+        "can be computed, up to a rigid body motion, only if the loads are distributed",
+        "is defined up to a rigid body motion; thus, not being unique, it is not possible to compute the stress and strain fields",
+        "none of the above"
+      ],
+      "answer": "none of the above"
+    },
+
+    {
+      "id": 13,
+      "category": "TF",
+      "thematic": "Structural mechanics",
+      "question": "The internal forces in a statically determined beam structure depend on the material elastic properties.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 14,
+      "category": "TF",
+      "thematic": "Beam theory",
+      "question": "The Timoshenko beam model does not account for transverse shear deformation.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 15,
+      "category": "TF",
+      "thematic": "Thin-walled beams",
+      "question": "The position of the shear center of a thin-walled beam depends on the loading conditions.",
+      "choices": null,
+      "answer": false
+    },
+
+    {
+      "id": 16,
+      "category": "QCM",
+      "thematic": "Shear flow / Wing ribs",
+      "question": "The shear flows acting on a rib are:",
+      "choices": [
+        "the flows equivalent to the load introduced by the rib",
+        "the flows equivalent to the load applied to the whole structure",
+        "the flows computed from the torsional equivalence equation",
+        "the flows computed by resorting to the bending equations",
+        "the flows equilibrating the load introduced by the rib",
+        "none of the above"
+      ],
+      "answer": "the flows equilibrating the load introduced by the rib"
+    },
+
+    {
+      "id": 17,
+      "category": "QCM",
+      "thematic": "Virtual Work Principle",
+      "question": "The Principle of Virtual Work:",
+      "choices": [
+        "is used to impose the equilibrium",
+        "is used to impose the equilibrium and the compatibility",
+        "is used to impose the compatibility",
+        "none of the above"
+      ],
+      "answer": "is used to impose the equilibrium"
+    },
+
+    {
+      "id": 18,
+      "category": "QCM",
+      "thematic": "Linear static FEM",
+      "question": "A structure is modeled using finite elements. It is unconstrained and subjected to a set of loads in self-equilibrium. The solution of the linear static problem:",
+      "choices": [
+        "is stress-free",
+        "can be obtained, up to a rigid body motion, after constraining the structure isostatically",
+        "can be obtained only if the loads are concentrated",
+        "can be obtained, up to a rigid body motion, only if the loads are distributed",
+        "is defined up to a rigid body motion; thus, not being unique, the stress and displacement fields can never be computed",
+        "none of the above"
+      ],
+      "answer": "can be obtained, up to a rigid body motion, after constraining the structure isostatically"
+    },
+
+    {
+      "id": 19,
+      "category": "TF",
+      "thematic": "Beam modeling",
+      "question": "Any structure with one dimension much larger than the other two can likely be modeled as a beam.",
+      "choices": null,
+      "answer": true
+    },
+    {
+      "id": 20,
+      "category": "TF",
+      "thematic": "Timoshenko beam",
+      "question": "According to the Timoshenko beam model, the transverse shear stresses are linear on the cross section.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 21,
+      "category": "TF",
+      "thematic": "Closed sections / Shear center",
+      "question": "The position of the shear center of a closed-cell section can be evaluated using the shear flow equations and the equivalence to internal moment.",
+      "choices": null,
+      "answer": false
+    },
+
+    {
+      "id": 22,
+      "category": "QCM",
+      "thematic": "Beam finite elements",
+      "question": "A system of slender beams can be modeled by beams finite elements:",
+      "choices": [
+        "never",
+        "if the structure can sustain the loads through an internal axial load path",
+        "only if shear deformability is not negligible",
+        "always",
+        "none of the above"
+      ],
+      "answer": "always"
+    },
+
+    {
+      "id": 23,
+      "category": "QCM",
+      "thematic": "Euler-Bernoulli beam",
+      "question": "An Euler-Bernoulli cantilever beam with uniform stiffness is clamped at one extremity and loaded with a concentrated force at the tip. The solution obtained using a displacement-based method based on polynomial functions with two unknown coefficients is:",
+      "choices": [
+        "exact",
+        "an approximation of the exact solution with errors below 10%",
+        "an approximation of the exact solution with errors depending on the problem data",
+        "none of the above"
+      ],
+      "answer": "exact"
+    },
+
+    {
+      "id": 24,
+      "category": "QCM",
+      "thematic": "PCVW / Variational methods",
+      "question": "The PCVW allows to:",
+      "choices": [
+        "find the compatible solution among the equilibrated ones",
+        "find the equilibrated solution among the compatible ones",
+        "find the compatible and equilibrated solutions among all the possible independent stress and displacement fields",
+        "none of the above"
+      ],
+      "answer": "find the compatible solution among the equilibrated ones"
     }
   ]
 }
+
