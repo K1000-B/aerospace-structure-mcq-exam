@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import random
+import time
 from dataclasses import dataclass
 from typing import List, Optional, Union, Literal
 
@@ -68,6 +69,10 @@ class QuizApp(tk.Tk):
         self.score: int = 0
         self.total: int = 0
         self.bubbles = []
+        self.exam_mode: bool = False
+        self.exam_user_answers: List[Optional[Union[bool, str]]] = []
+        self.timer_running: bool = False
+        self.timer_start: float = 0.0
 
         # Load data + build UI
         self.load_questions(json_path)
@@ -196,7 +201,7 @@ class QuizApp(tk.Tk):
             text="Start selected theme",
             command=self.on_start_theme,
             bg=self.accent_color,
-            fg="#ffffff",
+            fg="black",
             bd=0,
             font=("Helvetica", 11, "bold"),
             activebackground=self.accent_hover,
@@ -208,6 +213,24 @@ class QuizApp(tk.Tk):
         )
         start_theme_btn.grid(row=2, column=0, sticky="ew", padx=16, pady=(0, 12))
         self._add_hover_effect(start_theme_btn, self.accent_color, self.accent_hover)
+
+        exam_btn = tk.Button(
+            left_panel,
+            text="Start exam (3 TF + 3 QCM)",
+            command=self.start_exam_mode,
+            bg="#0ea5e9",
+            fg="#0b2b1f",
+            bd=0,
+            font=("Helvetica", 11, "bold"),
+            activebackground="#0284c7",
+            activeforeground="#0b2b1f",
+            padx=12,
+            pady=8,
+            relief="flat",
+            cursor="hand2",
+        )
+        exam_btn.grid(row=3, column=0, sticky="ew", padx=16, pady=(0, 16))
+        self._add_hover_effect(exam_btn, "#0ea5e9", "#0284c7")
 
         # Right panel: quiz card
         quiz_card = tk.Frame(
@@ -227,6 +250,7 @@ class QuizApp(tk.Tk):
         top_info.columnconfigure(0, weight=1)
         top_info.columnconfigure(1, weight=0)
         top_info.columnconfigure(2, weight=0)
+        top_info.columnconfigure(3, weight=0)
 
         self.current_theme_label = tk.Label(
             top_info,
@@ -254,6 +278,15 @@ class QuizApp(tk.Tk):
             bg=self.card_color,
         )
         self.score_label.grid(row=0, column=2, sticky="e")
+
+        self.timer_label = tk.Label(
+            top_info,
+            text="Timer: 00:00",
+            font=("Helvetica", 11),
+            fg=self.muted_text,
+            bg=self.card_color,
+        )
+        self.timer_label.grid(row=0, column=3, sticky="e", padx=(12, 0))
 
         # Question label
         self.question_label = tk.Label(
@@ -293,7 +326,7 @@ class QuizApp(tk.Tk):
             text="Submit answer",
             command=self.on_submit,
             bg=self.accent_color,
-            fg="#ffffff",
+            fg="black",
             bd=0,
             font=("Helvetica", 11, "bold"),
             activebackground=self.accent_hover,
@@ -415,8 +448,12 @@ class QuizApp(tk.Tk):
 
     def start_theme(self, theme: str) -> None:
         """Initialize quiz state for a given thematic."""
+        self.exam_mode = False
+        self.stop_timer()
+        self.timer_label.config(text="Timer: 00:00")
         self.current_theme = theme
         self.current_theme_label.config(text=f"Thematic: {theme}")
+        self.exam_user_answers = []
 
         self.filtered_questions = [q for q in self.questions if q.thematic == theme]
         if not self.filtered_questions:
@@ -429,9 +466,49 @@ class QuizApp(tk.Tk):
         self.total = 0
         self.update_score_label()
         self.show_question()
-        self.feedback_label.config(text="")
+        if self.exam_mode:
+            self.feedback_label.config(
+                text="Exam en cours : aucune correction avant la fin.",
+                fg=self.muted_text,
+            )
+        else:
+            self.feedback_label.config(text="")
         self.submit_btn.config(state="normal")
         self.next_btn.config(state="disabled")
+
+    def start_exam_mode(self) -> None:
+        """Start a mixed exam with 3 TF and 3 QCM questions across thematics."""
+        tf_questions = [q for q in self.questions if q.category == "TF"]
+        qcm_questions = [q for q in self.questions if q.category == "QCM"]
+
+        if len(tf_questions) < 3 or len(qcm_questions) < 3:
+            messagebox.showwarning(
+                "Exam mode",
+                "Not enough questions to start the exam (need at least 3 TF and 3 QCM).",
+            )
+            return
+
+        selected = random.sample(tf_questions, 3) + random.sample(qcm_questions, 3)
+        random.shuffle(selected)
+
+        self.exam_mode = True
+        self.exam_user_answers = [None for _ in selected]
+        self.filtered_questions = selected
+        self.current_theme = None
+        self.current_theme_label.config(text="Exam mode: Mixed themes")
+        self.score = 0
+        self.total = 0
+        self.current_index = 0
+        self.update_score_label()
+        self.feedback_label.config(
+            text="Exam en cours : les corrections seront affichées à la fin.",
+            fg=self.muted_text,
+        )
+        self.submit_btn.config(state="normal")
+        self.next_btn.config(state="disabled")
+        self.show_question()
+        self.timer_label.config(text="Timer: 00:00")
+        self.start_timer()
 
     def show_question(self) -> None:
         """Display current question and build answer widgets based on category."""
@@ -439,6 +516,9 @@ class QuizApp(tk.Tk):
             return
 
         if self.current_index >= len(self.filtered_questions):
+            if self.exam_mode:
+                self.finish_exam()
+                return
             random.shuffle(self.filtered_questions)
             self.current_index = 0
 
@@ -518,52 +598,75 @@ class QuizApp(tk.Tk):
 
         self.total += 1
 
-        if q.category == "TF":
-            # index 0 → True, index 1 → False
-            user_answer = (selection == 0)
-            correct = bool(q.answer)  # type: ignore[arg-type]
-
-            if user_answer == correct:
-                self.score += 1
-                self.feedback_label.config(
-                    text="Correct ✅ (True/False question)",
-                    fg=self.correct_color,
-                )
+        if self.exam_mode:
+            # Save user answer without revealing correctness
+            if q.category == "TF":
+                user_answer: Union[bool, str] = selection == 0
             else:
-                correct_str = "True" if correct else "False"
-                self.feedback_label.config(
-                    text=f"Incorrect ❌  |  Correct answer: {correct_str}",
-                    fg=self.wrong_color,
-                )
-        else:
-            # QCM: q.answer is the correct choice string
-            choices = q.choices or []
-            correct_str = str(q.answer)  # type: ignore[arg-type]
-
-            try:
-                correct_index = choices.index(correct_str)
-            except ValueError:
-                correct_index = -1
-
-            if selection == correct_index:
-                self.score += 1
-                self.feedback_label.config(
-                    text="Correct ✅",
-                    fg=self.correct_color,
-                )
-            else:
-                if 0 <= correct_index < len(choices):
-                    correct_text = choices[correct_index]
+                choices = q.choices or []
+                if 0 <= selection < len(choices):
+                    user_answer = choices[selection]
                 else:
-                    correct_text = correct_str or "N/A"
-                self.feedback_label.config(
-                    text=f"Incorrect ❌  |  Correct answer: {correct_text}",
-                    fg=self.wrong_color,
-                )
+                    user_answer = ""
 
-        self.update_score_label()
-        self.submit_btn.config(state="disabled")
-        self.next_btn.config(state="normal")
+            self.exam_user_answers[self.current_index] = user_answer
+            self.feedback_label.config(
+                text="Réponse enregistrée. Les corrections seront affichées à la fin.",
+                fg=self.muted_text,
+            )
+            self.submit_btn.config(state="disabled")
+
+            if self.current_index == len(self.filtered_questions) - 1:
+                self.finish_exam()
+            else:
+                self.next_btn.config(state="normal")
+        else:
+            if q.category == "TF":
+                # index 0 → True, index 1 → False
+                user_answer = (selection == 0)
+                correct = bool(q.answer)  # type: ignore[arg-type]
+
+                if user_answer == correct:
+                    self.score += 1
+                    self.feedback_label.config(
+                        text="Correct ✅ (True/False question)",
+                        fg=self.correct_color,
+                    )
+                else:
+                    correct_str = "True" if correct else "False"
+                    self.feedback_label.config(
+                        text=f"Incorrect ❌  |  Correct answer: {correct_str}",
+                        fg=self.wrong_color,
+                    )
+            else:
+                # QCM: q.answer is the correct choice string
+                choices = q.choices or []
+                correct_str = str(q.answer)  # type: ignore[arg-type]
+
+                try:
+                    correct_index = choices.index(correct_str)
+                except ValueError:
+                    correct_index = -1
+
+                if selection == correct_index:
+                    self.score += 1
+                    self.feedback_label.config(
+                        text="Correct ✅",
+                        fg=self.correct_color,
+                    )
+                else:
+                    if 0 <= correct_index < len(choices):
+                        correct_text = choices[correct_index]
+                    else:
+                        correct_text = correct_str or "N/A"
+                    self.feedback_label.config(
+                        text=f"Incorrect ❌  |  Correct answer: {correct_text}",
+                        fg=self.wrong_color,
+                    )
+
+            self.update_score_label()
+            self.submit_btn.config(state="disabled")
+            self.next_btn.config(state="normal")
 
     def on_next(self) -> None:
         """Go to next question in current thematic."""
@@ -572,9 +675,102 @@ class QuizApp(tk.Tk):
         self.current_index += 1
         self.show_question()
 
+    def start_timer(self) -> None:
+        self.timer_start = time.perf_counter()
+        self.timer_running = True
+        self._update_timer()
+
+    def stop_timer(self) -> None:
+        self.timer_running = False
+
+    def _update_timer(self) -> None:
+        if not self.timer_running:
+            return
+
+        elapsed = int(time.perf_counter() - self.timer_start)
+        minutes, seconds = divmod(elapsed, 60)
+        hours, minutes = divmod(minutes, 60)
+        self.timer_label.config(text=f"Timer: {hours:02d}:{minutes:02d}:{seconds:02d}")
+        self.after(1000, self._update_timer)
+
     def update_score_label(self) -> None:
         """Update score display."""
         self.score_label.config(text=f"Score: {self.score} / {self.total}")
+
+    def finish_exam(self) -> None:
+        """Compute score and show corrections at the end of the exam mode."""
+        if not self.exam_mode:
+            return
+
+        self.stop_timer()
+        total_questions = len(self.filtered_questions)
+        correct_count = 0
+        corrections = []
+
+        for idx, q in enumerate(self.filtered_questions):
+            user_answer = self.exam_user_answers[idx]
+            if q.category == "TF":
+                correct_answer: Union[bool, str] = bool(q.answer)  # type: ignore[arg-type]
+                is_correct = user_answer == correct_answer
+                correct_display = "True" if correct_answer else "False"
+                if user_answer is None:
+                    user_display = "Non répondu"
+                    is_correct = False
+                else:
+                    user_display = "True" if user_answer else "False"
+            else:
+                correct_answer = str(q.answer)
+                is_correct = user_answer == correct_answer
+                if user_answer is None:
+                    user_display = "Non répondu"
+                    is_correct = False
+                else:
+                    user_display = str(user_answer or "")
+                correct_display = correct_answer
+
+            if is_correct:
+                correct_count += 1
+
+            corrections.append(
+                f"Q{idx + 1} ({q.category} - {q.thematic}): {q.question}\n"
+                f"  Votre réponse : {user_display}\n"
+                f"  Réponse attendue : {correct_display}\n"
+                f"  Statut : {'✅ Correct' if is_correct else '❌ Incorrect'}\n"
+            )
+
+        self.score = correct_count
+        self.total = total_questions
+        percent = (correct_count / total_questions) * 100 if total_questions else 0
+        self.exam_mode = False
+        self.update_score_label()
+        self.feedback_label.config(
+            text=f"Exam terminé – Score: {percent:.1f}% ({correct_count}/{total_questions})",
+            fg=self.text_color,
+        )
+        self.submit_btn.config(state="disabled")
+        self.next_btn.config(state="disabled")
+
+        summary_window = tk.Toplevel(self)
+        summary_window.title("Résultats de l'examen")
+        summary_window.geometry("750x500")
+
+        title = tk.Label(
+            summary_window,
+            text=f"Score: {percent:.1f}%   |   Temps écoulé: {self.timer_label.cget('text').split(': ',1)[1]}",
+            font=("Helvetica", 13, "bold"),
+        )
+        title.pack(pady=10)
+
+        text_widget = tk.Text(
+            summary_window,
+            wrap="word",
+            font=("Helvetica", 11),
+            padx=12,
+            pady=12,
+        )
+        text_widget.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        text_widget.insert("1.0", "\n".join(corrections))
+        text_widget.config(state="disabled")
 
 
 def main() -> None:
