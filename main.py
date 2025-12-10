@@ -342,7 +342,8 @@ class QuizApp(tk.Tk):
         if not hasattr(self, "background_canvas"):
             return
 
-        self.background_canvas.lower()
+        # Send the canvas behind other widgets without requiring a tag/id argument
+        self.background_canvas.tk.call("lower", self.background_canvas._w)
         self.after(120, self._seed_bubbles)
         self.after(220, self._move_bubbles)
 
