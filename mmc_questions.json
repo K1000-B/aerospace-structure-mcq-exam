@@ -1,0 +1,73 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "category": "TF",
+      "thematic": "Wing structures / Buckling",
+      "question": "“Differential bending” is a phenomenon that appears when the compressed panels of a wing are buckled, so that their bending stiffness contribution is different from that of the panels that remain stable.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 2,
+      "category": "TF",
+      "thematic": "Beam theory / Shear deformability",
+      "question": "You can neglect shear deformability for beams if the number EI/(l^2 EA) is large.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 3,
+      "category": "TF",
+      "thematic": "Finite Elements / Timoshenko beam",
+      "question": "You need to use Hermitian shape functions for the displacement field when building a Timoshenko beam finite element.",
+      "choices": null,
+      "answer": false
+    },
+    {
+      "id": 4,
+      "category": "QCM",
+      "thematic": "Continuum mechanics / Stress states",
+      "question": "σzz = E εzz is:",
+      "choices": [
+        "wrong",
+        "correct for plates",
+        "correct for a state of axial stress",
+        "correct for a state of plane stress",
+        "correct for a state of plane strain",
+        "none of the above"
+      ],
+      "answer": "correct for a state of axial stress"
+    },
+    {
+      "id": 5,
+      "category": "QCM",
+      "thematic": "Thin-walled structures / Shear flow",
+      "question": "The shear flux in a thin wing panel is equal to:",
+      "choices": [
+        "the average shear stress divided by the panel thickness",
+        "the average shear stress multiplied by the panel thickness",
+        "the average shear stress",
+        "the derivative with respect to the chord direction of the axial stress in the panel",
+        "none of the above"
+      ],
+      "answer": "the average shear stress multiplied by the panel thickness"
+    },
+    {
+      "id": 6,
+      "category": "QCM",
+      "thematic": "Joints / Glued connections",
+      "question": "The shear stress transmitted by a glued connection is:",
+      "choices": [
+        "higher at the extremities",
+        "lower at the extremities",
+        "constant",
+        "described by a sin function",
+        "described by a cos function",
+        "described by a cubic polynomial function",
+        "none of the above"
+      ],
+      "answer": "higher at the extremities"
+    }
+  ]
+}
