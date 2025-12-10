@@ -312,7 +312,7 @@ class QuizApp(tk.Tk):
             text="Next question",
             command=self.on_next,
             bg="#10b981",
-            fg="#0b2b1f",
+            fg="#000000",
             bd=0,
             font=("Helvetica", 11, "bold"),
             activebackground="#0ea371",
