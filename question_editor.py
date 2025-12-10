@@ -259,9 +259,6 @@ class QuestionEditor(tk.Tk):
         self.choices_container.grid(row=1, column=0, sticky="ew", padx=16)
         self.choices_container.columnconfigure(0, weight=1)
 
-        for _ in range(3):
-            self._add_choice_field()
-
         tk.Button(
             self.qcm_frame,
             text="Add choice",
@@ -289,6 +286,8 @@ class QuestionEditor(tk.Tk):
             state="readonly",
         )
         self.answer_menu.grid(row=4, column=0, sticky="ew", padx=16, pady=(4, 12))
+        for _ in range(3):
+            self._add_choice_field()
         self._refresh_answer_menu()
 
     def _add_choice_field(self, value: str = "") -> None:
