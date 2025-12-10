@@ -5,9 +5,19 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import List
+
+# Ensure Tk/Tcl find their bundled scripts when launched from Finder
+_resources_base = (
+    Path(sys.executable).resolve().parent.parent / "Resources"
+    if getattr(sys, "frozen", False)
+    else Path(__file__).parent
+)
+os.environ.setdefault("TCL_LIBRARY", str(_resources_base / "tcl8.6"))
+os.environ.setdefault("TK_LIBRARY", str(_resources_base / "tk8.6"))
 
 import tkinter as tk
 from tkinter import messagebox, ttk

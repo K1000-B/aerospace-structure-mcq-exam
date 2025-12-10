@@ -11,9 +11,16 @@ DATA_FILES = [
 ]
 OPTIONS = {
     "iconfile": "icon.icns",
-    "argv_emulation": True,
+    "argv_emulation": False,
     # Explicitly include tkinter to avoid stripping
     "packages": ["tkinter"],
+    "frameworks": [
+    "/Users/camile/anaconda3/lib/libffi.8.dylib",
+    "/Users/camile/anaconda3/lib/libffi.7.dylib",
+    "/Users/camile/anaconda3/lib/libtk8.6.dylib",
+    "/Users/camile/anaconda3/lib/libtcl8.6.dylib",
+],
+
 }
 
 

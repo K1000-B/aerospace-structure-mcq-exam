@@ -8,6 +8,7 @@ Created on Wed Dec 10 15:38:57 2025
 
 from __future__ import annotations
 
+import os
 import json
 import random
 import time
@@ -16,6 +17,17 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Literal
+
+# Ensure Tk/Tcl find their bundled scripts when launched from Finder
+_resources_base = (
+    Path(sys.executable).resolve().parent.parent / "Resources"
+    if getattr(sys, "frozen", False)
+    else Path(__file__).parent
+)
+os.environ.setdefault("TCL_LIBRARY", str(_resources_base / "tcl8.6"))
+os.environ.setdefault("TK_LIBRARY", str(_resources_base / "tk8.6"))
+os.environ.setdefault("TK_APP_NAME", "MMC QCM")
+os.environ.setdefault("TK_SILENCE_DEPRECATION", "1")
 
 import tkinter as tk
 from tkinter import messagebox
@@ -769,7 +781,11 @@ class QuizApp(tk.Tk):
             messagebox.showerror("Éditeur de questions", "Le fichier question_editor.py est introuvable.")
             return
         try:
-            proc = subprocess.Popen([sys.executable, str(editor_path)])
+            env = os.environ.copy()
+            # Ensure the bundled Tk/libffi libs are visible to the child process
+            frameworks_dir = Path(sys.executable).resolve().parent.parent / "Frameworks"
+            env["DYLD_LIBRARY_PATH"] = str(frameworks_dir)
+            proc = subprocess.Popen([sys.executable, str(editor_path)], env=env)
             self.editor_processes.append(proc)
             # Poll the editor process to reload questions once it exits
             self.after(1500, self._watch_question_editor)
