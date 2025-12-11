@@ -185,7 +185,7 @@ class QuestionEditor(tk.Tk):
             text="Load selection",
             command=self._on_select_from_list,
             bg=self.accent,
-            fg="white",
+            fg="black",
             bd=0,
             font=("Helvetica", 10, "bold"),
             padx=8,
