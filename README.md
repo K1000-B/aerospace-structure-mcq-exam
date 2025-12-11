@@ -7,12 +7,50 @@ Desktop trainer to rehearse MMC-style multiple-choice and true/false questions. 
 - No external dependencies or internet connection needed.
 
 ## Quick start
-1) Download/clone the repository.  
-2) From the project root, launch the trainer:
+1) Download/clone the repository.
+2) Open a terminal **in the project folder** (the one containing `main.py`).
+3) Run:
 ```bash
 python main.py
 ```
-Your progress is saved to `data/personnal_data/progress_data.json` (created automatically).
+If `python` points to Python 2 on your machine, use `python3 main.py` instead. Your progress is saved to `data/personnal_data/progress_data.json` (created automatically).
+
+### If you do not use Anaconda
+- **macOS with Python from python.org**: install Python from https://www.python.org/downloads/, then in Terminal run `python3 main.py`. The installer usually sets up `python3` and `pip3`.
+- **Windows with Python from python.org**: install from https://www.python.org/downloads/windows/ and check “Add Python to PATH” during setup. Then in Command Prompt or PowerShell run `python main.py`. If that fails, try `py main.py`.
+
+### macOS without Python installed
+Install via Homebrew, then run the app:
+```bash
+brew install python
+python3 main.py
+```
+(If you just installed Homebrew, follow its post-install instructions first.)
+
+### macOS: make `python` point to Homebrew’s Python
+If your Python is at `/usr/local/bin/python3` (common with Homebrew) and you want a shorter command, add an alias in your shell profile:
+```bash
+echo "alias python=/usr/local/bin/python3" >> ~/.zshrc   # for zsh (default on macOS)
+echo "alias python=/usr/local/bin/python3" >> ~/.bash_profile   # for bash
+```
+Then reload your shell (`source ~/.zshrc` or `source ~/.bash_profile`) and use `python main.py`. Without the alias, just run `python3 main.py`.
+
+### macOS: alias even without Homebrew
+If you installed Python manually (e.g., from python.org) and it lives at `/usr/local/bin/python3`, you can set aliases for both Python and pip:
+```bash
+nano ~/.zshrc
+alias python3="/usr/local/bin/python3"
+alias pip="/usr/local/bin/pip3"
+source ~/.zshrc
+```
+Open a new terminal or run the `source` line to apply the aliases, then use `python3 main.py` (or `python main.py` if you also add `alias python=/usr/local/bin/python3`).
+
+### Anaconda users
+If your prompt shows `(base)`, you are already in the default Anaconda environment. Run:
+```bash
+python main.py
+```
+If you prefer a clean environment, create one with `conda create -n qcm python=3.11`, activate it with `conda activate qcm`, then run `python main.py`.
 
 ## Using the trainer
 - Pick a thematic in the left list, then click the start button to get shuffled questions from that theme.
