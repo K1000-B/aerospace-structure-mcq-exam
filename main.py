@@ -251,14 +251,30 @@ class StatsManager:
         if not attempts:
             return []
 
-        rolling: List[int] = []
+        x_vals = list(range(1, len(attempts) + 1))
+        successes = [1 if a.get("correct") else 0 for a in attempts]
+
+        # Ordinary least squares regression to detect trend direction
+        n = len(x_vals)
+        mean_x = sum(x_vals) / n
+        mean_y = sum(successes) / n
+        denom = sum((x - mean_x) ** 2 for x in x_vals)
+        slope = (
+            sum((x - mean_x) * (y - mean_y) for x, y in zip(x_vals, successes)) / denom
+            if denom
+            else 0.0
+        )
+        intercept = mean_y - slope * mean_x
+
+        # Blend regression with a light exponential smoothing to keep short-term responsiveness
+        smoothing = 0.35
+        ema: Optional[float] = None
         points: List[tuple[int, float]] = []
-        for idx, attempt in enumerate(attempts, start=1):
-            rolling.append(1 if attempt.get("correct") else 0)
-            if len(rolling) > window:
-                rolling.pop(0)
-            rate = (sum(rolling) / len(rolling)) * 100
-            points.append((idx, rate))
+        for x, actual in zip(x_vals, successes):
+            regression_est = max(0.0, min(1.0, intercept + slope * x))
+            ema = actual if ema is None else smoothing * actual + (1 - smoothing) * ema
+            blended = 0.6 * regression_est + 0.4 * (ema if ema is not None else regression_est)
+            points.append((x, blended * 100))
         return points
 
     def daily_activity(
@@ -1306,7 +1322,7 @@ class QuizApp(tk.Tk):
         win = tk.Toplevel(self)
         self.dashboard_win = win
         win.title("Interactive dashboard")
-        win.geometry("1020x720")
+        win.geometry("1140x820")
         win.configure(bg=self.bg_color)
 
         header = tk.Frame(win, bg=self.bg_color)
@@ -1320,7 +1336,7 @@ class QuizApp(tk.Tk):
             bg=self.bg_color,
         ).grid(row=0, column=0, sticky="w")
 
-        tk.Label(
+        self.dashboard_header_desc = tk.Label(
             header,
             text="Visualize your overall, per-theme, and time-based performance. Filter the data to explore your progress.",
             font=("Helvetica", 11),
@@ -1328,7 +1344,8 @@ class QuizApp(tk.Tk):
             bg=self.bg_color,
             wraplength=760,
             justify="left",
-        ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
+        )
+        self.dashboard_header_desc.grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
 
         summary = tk.Frame(win, bg=self.bg_color)
         summary.pack(fill="x", padx=18, pady=(4, 10))
@@ -1420,14 +1437,16 @@ class QuizApp(tk.Tk):
         grid.pack(fill="both", expand=True, padx=18, pady=(0, 18))
         grid.columnconfigure(0, weight=2, uniform="grid")
         grid.columnconfigure(1, weight=3, uniform="grid")
-        grid.rowconfigure(0, weight=1)
-        grid.rowconfigure(1, weight=1)
+        grid.rowconfigure(0, weight=1, minsize=280)
+        grid.rowconfigure(1, weight=1, minsize=320)
+        self.dashboard_grid = grid
 
         # Overall donut chart
         overall_card = tk.Frame(
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         overall_card.grid(row=0, column=0, sticky="nsew", padx=(0, 12), pady=(0, 12))
+        overall_card.columnconfigure(0, weight=1)
         overall_card.rowconfigure(1, weight=1)
         tk.Label(
             overall_card,
@@ -1437,7 +1456,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_overall_canvas = tk.Canvas(
-            overall_card, width=320, height=260, bg=self.card_color, highlightthickness=0
+            overall_card, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_overall_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1446,16 +1465,17 @@ class QuizApp(tk.Tk):
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         trend_card.grid(row=0, column=1, sticky="nsew", padx=(12, 0), pady=(0, 12))
+        trend_card.columnconfigure(0, weight=1)
         trend_card.rowconfigure(1, weight=1)
         tk.Label(
             trend_card,
-            text="Success trend (moving average)",
+            text="Success trend (regression blend)",
             font=("Helvetica", 14, "bold"),
             bg=self.card_color,
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_trend_canvas = tk.Canvas(
-            trend_card, width=520, height=260, bg=self.card_color, highlightthickness=0
+            trend_card, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_trend_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1464,6 +1484,7 @@ class QuizApp(tk.Tk):
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         theme_card.grid(row=1, column=0, sticky="nsew", pady=(12, 0), padx=(0, 12))
+        theme_card.columnconfigure(0, weight=1)
         theme_card.rowconfigure(1, weight=1)
         tk.Label(
             theme_card,
@@ -1473,7 +1494,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_theme_canvas = tk.Canvas(
-            theme_card, width=520, height=240, bg=self.card_color, highlightthickness=0
+            theme_card, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_theme_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1486,6 +1507,7 @@ class QuizApp(tk.Tk):
             right_col, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         activity_card.grid(row=0, column=0, sticky="nsew", pady=(12, 6))
+        activity_card.columnconfigure(0, weight=1)
         activity_card.rowconfigure(1, weight=1)
         tk.Label(
             activity_card,
@@ -1495,7 +1517,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_activity_canvas = tk.Canvas(
-            activity_card, width=420, height=180, bg=self.card_color, highlightthickness=0
+            activity_card, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_activity_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1503,6 +1525,7 @@ class QuizApp(tk.Tk):
             right_col, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         detail_card.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
+        detail_card.columnconfigure(0, weight=1)
         tk.Label(
             detail_card,
             text="Detailed follow-up",
@@ -1510,7 +1533,7 @@ class QuizApp(tk.Tk):
             bg=self.card_color,
             fg=self.text_color,
         ).pack(anchor="w", padx=14, pady=(12, 4))
-        tk.Label(
+        self.dashboard_detail_desc = tk.Label(
             detail_card,
             text="Latest answers with theme, format, and precision for quick diagnostics.",
             font=("Helvetica", 10),
@@ -1518,11 +1541,13 @@ class QuizApp(tk.Tk):
             fg=self.muted_text,
             wraplength=420,
             justify="left",
-        ).pack(anchor="w", padx=14, pady=(0, 6))
+        )
+        self.dashboard_detail_desc.pack(anchor="w", padx=14, pady=(0, 6))
         self.dashboard_detail_container = tk.Frame(detail_card, bg=self.card_color)
         self.dashboard_detail_container.pack(fill="both", expand=True, padx=12, pady=(0, 10))
 
         self._refresh_dashboard_goal_menu()
+        self._bind_dashboard_resizing()
         self.refresh_dashboard()
 
     def refresh_dashboard(self) -> None:
@@ -1564,14 +1589,58 @@ class QuizApp(tk.Tk):
         self._render_recent_attempts(self.dashboard_detail_container, recent)
         self._update_kpis(overall, goal, streak, best_theme, speed)
 
+    def _bind_dashboard_resizing(self) -> None:
+        """Bind resize events to redraw dashboard content responsively."""
+
+        def schedule_refresh(_event=None):
+            if getattr(self, "_dashboard_resize_job", None):
+                self.dashboard_win.after_cancel(self._dashboard_resize_job)
+            if hasattr(self, "dashboard_header_desc"):
+                wrap = max(480, int(self.dashboard_win.winfo_width() * 0.72))
+                self.dashboard_header_desc.configure(wraplength=wrap)
+            if hasattr(self, "dashboard_detail_desc"):
+                container_width = max(
+                    self.dashboard_detail_container.winfo_width(),
+                    int(self.dashboard_win.winfo_width() * 0.38),
+                    360,
+                )
+                self.dashboard_detail_desc.configure(wraplength=container_width - 24)
+            if hasattr(self, "dashboard_grid"):
+                usable_w = max(self.dashboard_win.winfo_width() - 48, 720)
+                left_w = int(usable_w * 0.45)
+                right_w = usable_w - left_w
+                self.dashboard_grid.columnconfigure(0, minsize=left_w)
+                self.dashboard_grid.columnconfigure(1, minsize=right_w)
+
+                usable_h = max(self.dashboard_win.winfo_height() - 260, 540)
+                row_height = max(int(usable_h / 2), 280)
+                self.dashboard_grid.rowconfigure(0, minsize=row_height)
+                self.dashboard_grid.rowconfigure(1, minsize=row_height)
+            self._dashboard_resize_job = self.dashboard_win.after(120, self.refresh_dashboard)
+
+        for widget in (
+            self.dashboard_win,
+            self.dashboard_overall_canvas,
+            self.dashboard_trend_canvas,
+            self.dashboard_theme_canvas,
+            self.dashboard_activity_canvas,
+        ):
+            widget.bind("<Configure>", schedule_refresh)
+
     def _draw_overall_card(
         self, canvas: tk.Canvas, overall: Dict[str, Any], goal: Optional[Dict[str, Any]]
     ) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
-        cx, cy = width // 2, height // 2
-        radius = min(width, height) // 2 - 24
+        canvas.update_idletasks()
+        width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 220)
+        height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 220)
+
+        top_pad = 24
+        bottom_pad = 64
+        available_h = max(height - (top_pad + bottom_pad), 120)
+        cx = width // 2
+        cy = top_pad + available_h // 2
+        radius = max(min(width - 56, available_h) // 2, 60)
         rate = overall.get("rate", 0)
         total = overall.get("total", 0)
 
@@ -1617,7 +1686,7 @@ class QuizApp(tk.Tk):
             status = "Goal reached" if delta <= 0 else f"{delta:.1f} pts remaining"
             canvas.create_text(
                 cx,
-                height - 26,
+                height - 32,
                 text=f"{goal_label} · {status}",
                 font=("Helvetica", 11, "bold"),
                 fill=self.correct_color if delta <= 0 else self.accent_color,
@@ -1625,7 +1694,7 @@ class QuizApp(tk.Tk):
         elif not total:
             canvas.create_text(
                 cx,
-                height - 26,
+                height - 32,
                 text="Answer a few questions to see your progress",
                 font=("Helvetica", 11),
                 fill=self.muted_text,
@@ -1633,7 +1702,7 @@ class QuizApp(tk.Tk):
         else:
             canvas.create_text(
                 cx,
-                height - 26,
+                height - 32,
                 text=f"{goal_label}",
                 font=("Helvetica", 11, "bold"),
                 fill=self.muted_text,
@@ -1643,9 +1712,10 @@ class QuizApp(tk.Tk):
         self, canvas: tk.Canvas, points: List[tuple[int, float]], speed: Optional[float] = None
     ) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
-        margin = 42
+        canvas.update_idletasks()
+        width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 200)
+        height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 180)
+        margin = 64
 
         canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
         if not points:
@@ -1684,8 +1754,8 @@ class QuizApp(tk.Tk):
 
         canvas.create_text(
             width // 2,
-            margin - 12,
-            text="Correct answers trend (5-question moving average)",
+            margin - 16,
+            text="Correct answers trend (regression + EMA)",
             font=("Helvetica", 11, "bold"),
             fill=self.text_color,
         )
@@ -1701,8 +1771,9 @@ class QuizApp(tk.Tk):
 
     def _draw_theme_bars(self, canvas: tk.Canvas, breakdown: Dict[str, Dict[str, float]]) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
+        canvas.update_idletasks()
+        width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 220)
+        height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 180)
         margin = 60
         bar_gap = 16
 
@@ -1779,8 +1850,9 @@ class QuizApp(tk.Tk):
         category_mix: Dict[str, Dict[str, float]],
     ) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
+        canvas.update_idletasks()
+        width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 220)
+        height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 160)
         margin = 38
 
         canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
