@@ -3,7 +3,7 @@
     {
       "id": 1,
       "category": "TF",
-      "thematic": "Wing structures / Buckling",
+      "thematic": "Buckling & Stability",
       "question": "“Differential bending” is a phenomenon that appears when the compressed panels of a wing are buckled, so that their bending stiffness contribution is different from that of the panels that remain stable.",
       "choices": null,
       "answer": false,
@@ -12,7 +12,7 @@
     {
       "id": 2,
       "category": "TF",
-      "thematic": "Beam theory / Shear deformability",
+      "thematic": "Beams & Beam Theory",
       "question": "You can neglect shear deformability for beams if the number EI/(l^2 EA) is large.",
       "choices": null,
       "answer": false,
@@ -21,7 +21,7 @@
     {
       "id": 3,
       "category": "TF",
-      "thematic": "Finite Elements / Timoshenko beam",
+      "thematic": "Beams & Beam Theory",
       "question": "You need to use Hermitian shape functions for the displacement field when building a Timoshenko beam finite element.",
       "choices": null,
       "answer": false,
@@ -30,7 +30,7 @@
     {
       "id": 4,
       "category": "QCM",
-      "thematic": "Continuum mechanics / Stress states",
+      "thematic": "Continuum & Constitutive Laws",
       "question": "σzz = E εzz is:",
       "choices": [
         "wrong",
@@ -46,7 +46,7 @@
     {
       "id": 5,
       "category": "QCM",
-      "thematic": "Thin-walled structures / Shear flow",
+      "thematic": "Thin-walled & Semi-monocoque Structures",
       "question": "The shear flux in a thin wing panel is equal to:",
       "choices": [
         "the average shear stress divided by the panel thickness",
@@ -61,7 +61,7 @@
     {
       "id": 6,
       "category": "QCM",
-      "thematic": "Joints / Glued connections",
+      "thematic": "Joints & Connections",
       "question": "The shear stress transmitted by a glued connection is:",
       "choices": [
         "higher at the extremities",
@@ -78,7 +78,7 @@
     {
       "id": 7,
       "category": "TF",
-      "thematic": "Beam bending",
+      "thematic": "Beams & Beam Theory",
       "question": "The axial stress of beam transmitting a constant bending moment Mx does not depend on the material elastic modulus E.",
       "choices": null,
       "answer": true,
@@ -87,7 +87,7 @@
     {
       "id": 8,
       "category": "TF",
-      "thematic": "Buckling theory",
+      "thematic": "Buckling & Stability",
       "question": "The Timoshenko model is used to compute the critical buckling stress of a simply supported compressed plate.",
       "choices": null,
       "answer": false,
@@ -96,7 +96,7 @@
     {
       "id": 9,
       "category": "TF",
-      "thematic": "Finite elements / Shape functions",
+      "thematic": "Finite Elements & FEM",
       "question": "Hermitian shape functions are C2 (continuous, and with continuous first and second derivatives).",
       "choices": null,
       "answer": false,
@@ -105,7 +105,7 @@
     {
       "id": 10,
       "category": "QCM",
-      "thematic": "Stability / Crippling",
+      "thematic": "Buckling & Stability",
       "question": "“Crippling” is:",
       "choices": [
         "a failure mode of thin-walled compressed beam",
@@ -121,7 +121,7 @@
     {
       "id": 11,
       "category": "QCM",
-      "thematic": "Finite elements / Convergence",
+      "thematic": "Finite Elements & FEM",
       "question": "Assume that the solution of a given three dimensional elastic problem has a finite H10 norm; an approximated solution, obtained with quadratic finite elements with average dimension h:",
       "choices": [
         "has quadratic convergence of the stress with respect to h",
@@ -136,7 +136,7 @@
     {
       "id": 12,
       "category": "QCM",
-      "thematic": "Linear static FEM",
+      "thematic": "Finite Elements & FEM",
       "question": "A structure is modeled using finite elements. It is unconstrained and subjected to a set of loads in self-equilibrium. The solution of the linear static problem:",
       "choices": [
         "is stress-free",
@@ -152,7 +152,7 @@
     {
       "id": 13,
       "category": "TF",
-      "thematic": "Structural mechanics",
+      "thematic": "General structural mechanics",
       "question": "The internal forces in a statically determined beam structure depend on the material elastic properties.",
       "choices": null,
       "answer": false,
@@ -161,7 +161,7 @@
     {
       "id": 14,
       "category": "TF",
-      "thematic": "Beam theory",
+      "thematic": "Beams & Beam Theory",
       "question": "The Timoshenko beam model does not account for transverse shear deformation.",
       "choices": null,
       "answer": false,
@@ -170,7 +170,7 @@
     {
       "id": 15,
       "category": "TF",
-      "thematic": "Thin-walled beams",
+      "thematic": "Beams & Beam Theory",
       "question": "The position of the shear center of a thin-walled beam depends on the loading conditions.",
       "choices": null,
       "answer": false,
@@ -179,7 +179,7 @@
     {
       "id": 16,
       "category": "QCM",
-      "thematic": "Shear flow / Wing ribs",
+      "thematic": "Thin-walled & Semi-monocoque Structures",
       "question": "The shear flows acting on a rib are:",
       "choices": [
         "the flows equivalent to the load introduced by the rib",
@@ -195,7 +195,7 @@
     {
       "id": 17,
       "category": "QCM",
-      "thematic": "Virtual Work Principle",
+      "thematic": "Virtual Work & Variational Methods",
       "question": "The Principle of Virtual Work:",
       "choices": [
         "is used to impose the equilibrium",
@@ -209,7 +209,7 @@
     {
       "id": 18,
       "category": "QCM",
-      "thematic": "Linear static FEM",
+      "thematic": "Finite Elements & FEM",
       "question": "A structure is modeled using finite elements. It is unconstrained and subjected to a set of loads in self-equilibrium. The solution of the linear static problem:",
       "choices": [
         "is stress-free",
@@ -225,7 +225,7 @@
     {
       "id": 19,
       "category": "TF",
-      "thematic": "Beam modeling",
+      "thematic": "Beams & Beam Theory",
       "question": "Any structure with one dimension much larger than the other two can likely be modeled as a beam.",
       "choices": null,
       "answer": true,
@@ -234,7 +234,7 @@
     {
       "id": 20,
       "category": "TF",
-      "thematic": "Timoshenko beam",
+      "thematic": "Beams & Beam Theory",
       "question": "According to the Timoshenko beam model, the transverse shear stresses are linear on the cross section.",
       "choices": null,
       "answer": false,
@@ -243,7 +243,7 @@
     {
       "id": 21,
       "category": "TF",
-      "thematic": "Closed sections / Shear center",
+      "thematic": "Thin-walled & Semi-monocoque Structures",
       "question": "The position of the shear center of a closed-cell section can be evaluated using the shear flow equations and the equivalence to internal moment.",
       "choices": null,
       "answer": false,
@@ -252,7 +252,7 @@
     {
       "id": 22,
       "category": "QCM",
-      "thematic": "Beam finite elements",
+      "thematic": "Beams & Beam Theory",
       "question": "A system of slender beams can be modeled by beams finite elements:",
       "choices": [
         "never",
@@ -267,7 +267,7 @@
     {
       "id": 23,
       "category": "QCM",
-      "thematic": "Euler-Bernoulli beam",
+      "thematic": "Beams & Beam Theory",
       "question": "An Euler-Bernoulli cantilever beam with uniform stiffness is clamped at one extremity and loaded with a concentrated force at the tip. The solution obtained using a displacement-based method based on polynomial functions with two unknown coefficients is:",
       "choices": [
         "exact",
@@ -281,7 +281,7 @@
     {
       "id": 24,
       "category": "QCM",
-      "thematic": "PCVW / Variational methods",
+      "thematic": "Virtual Work & Variational Methods",
       "question": "The PCVW allows to:",
       "choices": [
         "find the compatible solution among the equilibrated ones",
@@ -295,7 +295,7 @@
     {
       "id": 25,
       "category": "TF",
-      "thematic": "Plane strain",
+      "thematic": "Continuum & Constitutive Laws",
       "question": "Whenever a slender structure works in plane strain the axial deformation is null.",
       "choices": null,
       "answer": true,
@@ -304,7 +304,7 @@
     {
       "id": 26,
       "category": "TF",
-      "thematic": "Buckling",
+      "thematic": "Buckling & Stability",
       "question": "The critical buckling force for a simply supported compressed beam is inversely proportional to its slenderness (∝ 1/λ).",
       "choices": null,
       "answer": false,
@@ -313,7 +313,7 @@
     {
       "id": 27,
       "category": "TF",
-      "thematic": "Constitutive laws",
+      "thematic": "Continuum & Constitutive Laws",
       "question": "The relation σzz = E εzz is correct only for a state of plane stress.",
       "choices": null,
       "answer": false,
@@ -322,7 +322,7 @@
     {
       "id": 28,
       "category": "QCM",
-      "thematic": "Plate boundary conditions",
+      "thematic": "Plates & Plate Theory",
       "question": "A “simply supported” plate has:",
       "choices": [
         "transverse displacement and bending rotation prevented on one of its boundary sides",
@@ -338,7 +338,7 @@
     {
       "id": 29,
       "category": "QCM",
-      "thematic": "Thin-walled torsion",
+      "thematic": "Thin-walled & Semi-monocoque Structures",
       "question": "When a torsional moment is applied to a thin-walled beam, without any other load:",
       "choices": [
         "the shear flows are null",
@@ -355,7 +355,7 @@
     {
       "id": 30,
       "category": "TF",
-      "thematic": "Plates",
+      "thematic": "Plates & Plate Theory",
       "question": "Thin plates typically work in plane strain conditions.",
       "choices": null,
       "answer": false,
@@ -364,7 +364,7 @@
     {
       "id": 31,
       "category": "TF",
-      "thematic": "Finite elements",
+      "thematic": "Finite Elements & FEM",
       "question": "The stress field predicted by a FE solution is continuous.",
       "choices": null,
       "answer": false,
@@ -373,7 +373,7 @@
     {
       "id": 32,
       "category": "TF",
-      "thematic": "Beam mechanics",
+      "thematic": "Beams & Beam Theory",
       "question": "The cross section of a beam subject to shear has an out-of-plane warping.",
       "choices": null,
       "answer": true,
@@ -382,7 +382,7 @@
     {
       "id": 33,
       "category": "QCM",
-      "thematic": "Riveted connections",
+      "thematic": "Joints & Connections",
       "question": "A riveted connection between two panels loaded in-plane cannot fail because of:",
       "choices": [
         "shear stress in the panels",
@@ -398,7 +398,7 @@
     {
       "id": 34,
       "category": "QCM",
-      "thematic": "Shear deformability",
+      "thematic": "General structural mechanics",
       "question": "Shear deformability is important for:",
       "choices": [
         "slender compact cross-section beams",
@@ -414,7 +414,7 @@
     {
       "id": 35,
       "category": "QCM",
-      "thematic": "Axial stiffness",
+      "thematic": "Thin-walled & Semi-monocoque Structures",
       "question": "The axial stiffness for a thin-walled beam:",
       "choices": [
         "is null",
@@ -430,7 +430,7 @@
     {
       "id": 36,
       "category": "TF",
-      "thematic": "Plane strain",
+      "thematic": "Continuum & Constitutive Laws",
       "question": "The assumption of plane strain implies that a component of stress is null.",
       "choices": null,
       "answer": false,
@@ -439,7 +439,7 @@
     {
       "id": 37,
       "category": "TF",
-      "thematic": "Virtual work",
+      "thematic": "Virtual Work & Variational Methods",
       "question": "The essential boundary conditions are satisfied in a weak sense by the Principle of Virtual Work.",
       "choices": null,
       "answer": false,
@@ -448,7 +448,7 @@
     {
       "id": 38,
       "category": "TF",
-      "thematic": "Semi-monocoque theory",
+      "thematic": "Thin-walled & Semi-monocoque Structures",
       "question": "According to the semi-monocoque model, the axial stress σzz in the panels can be computed from the axial derivative of the shear stress.",
       "choices": null,
       "answer": false,
@@ -457,7 +457,7 @@
     {
       "id": 39,
       "category": "QCM",
-      "thematic": "Glued connections",
+      "thematic": "Joints & Connections",
       "question": "The shear stress transmitted by a glued connection is:",
       "choices": [
         "higher at the extremities",
@@ -474,7 +474,7 @@
     {
       "id": 40,
       "category": "QCM",
-      "thematic": "Bearing stress",
+      "thematic": "Joints & Connections",
       "question": "The bearing stress is related to:",
       "choices": [
         "glued connections",
