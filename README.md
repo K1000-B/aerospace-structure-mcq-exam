@@ -92,3 +92,6 @@ Questions live in `data/mmc_questions.json` under the `questions` list:
 
 ## Resetting progress
 Delete `data/personnal_data/progress_data.json` if you want to start over with a clean history. The file will be recreated on the next launch.
+
+## Feedback
+Don't hesitate to leave a comment through this form : https://docs.google.com/forms/d/e/1FAIpQLSdFU3LtSSEAOgYCdNJghEbxxWuJ9BEaVWrlH02kPHI9Lp_THg/viewform?usp=dialog 
