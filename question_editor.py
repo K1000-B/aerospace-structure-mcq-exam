@@ -150,7 +150,7 @@ class QuestionEditor(tk.Tk):
 
         tk.Label(
             existing_frame,
-            text="Questions existantes",
+            text="Existing questions",
             font=("Helvetica", 12, "bold"),
             fg=self.text,
             bg=self.card,
@@ -182,7 +182,7 @@ class QuestionEditor(tk.Tk):
         btns.grid(row=2, column=0, sticky="w", pady=(8, 0))
         tk.Button(
             btns,
-            text="Charger",
+            text="Load selection",
             command=self._on_select_from_list,
             bg=self.accent,
             fg="white",
@@ -195,7 +195,7 @@ class QuestionEditor(tk.Tk):
         ).pack(side="left", padx=(0, 6))
         tk.Button(
             btns,
-            text="Nouveau",
+            text="New",
             command=self._reset_form,
             bg="#10b981",
             fg="#0b2b1f",
@@ -208,7 +208,7 @@ class QuestionEditor(tk.Tk):
         ).pack(side="left", padx=(0, 6))
         tk.Button(
             btns,
-            text="Supprimer",
+            text="Delete",
             command=self._delete_selected,
             bg="#fca5a5",
             fg="#7f1d1d",
@@ -303,7 +303,7 @@ class QuestionEditor(tk.Tk):
 
         tk.Label(
             explication_frame,
-            text="Explication (optionnel)",
+            text="Explanation (optional)",
             font=("Helvetica", 12, "bold"),
             fg=self.text,
             bg=self.card,
@@ -483,9 +483,12 @@ class QuestionEditor(tk.Tk):
     def _refresh_next_id_label(self) -> None:
         total = len(self.questions)
         if self.selected_question_id is not None:
-            self.status_var.set(f"{total} question(s) in DB · édition #{self.selected_question_id}")
-            self.next_id_label.config(text=f"Édition de l'ID {self.selected_question_id}")
+            self.status_var.set(
+                f"{total} question(s) in DB · editing #{self.selected_question_id}"
+            )
+            self.next_id_label.config(text=f"Editing ID {self.selected_question_id}")
         else:
+            # Show authors how many records exist while guiding them toward the next ID to use.
             self.status_var.set(f"{total} question(s) currently in the database")
             self.next_id_label.config(text=f"Next id: {self._next_id()}")
 
@@ -543,11 +546,11 @@ class QuestionEditor(tk.Tk):
         if target_id is None and self.selected_question_id is not None:
             target_id = self.selected_question_id
         if target_id is None:
-            messagebox.showinfo("Suppression", "Sélectionnez une question à supprimer.")
+            messagebox.showinfo("Delete", "Select a question to delete.")
             return
 
         if not messagebox.askyesno(
-            "Confirmer la suppression", f"Supprimer définitivement la question #{target_id} ?"
+            "Confirm deletion", f"Permanently delete question #{target_id}?"
         ):
             return
 
@@ -556,7 +559,7 @@ class QuestionEditor(tk.Tk):
         self._write_questions()
         self._populate_question_list()
         self._reset_form()
-        messagebox.showinfo("Suppression", f"Question #{target_id} supprimée.")
+        messagebox.showinfo("Delete", f"Question #{target_id} deleted.")
 
     # ---------- Save flow ----------
     def _on_save(self) -> None:
@@ -616,7 +619,7 @@ class QuestionEditor(tk.Tk):
         self._populate_question_list()
 
         if is_edit:
-            messagebox.showinfo("Mis à jour", f"Question #{qid} mise à jour.")
+            messagebox.showinfo("Updated", f"Question #{qid} updated.")
             self._refresh_next_id_label()
         else:
             messagebox.showinfo("Saved", f"Question {new_question['id']} added to {self.json_path}.")

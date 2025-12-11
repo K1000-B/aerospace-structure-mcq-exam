@@ -201,7 +201,7 @@ class StatsManager:
 
     def _filtered_attempts(self, theme: Optional[str] = None) -> List[Dict[str, Any]]:
         attempts = self.data.get("attempts", [])
-        if theme is None or theme == "Tous":
+        if theme is None or theme == "All":
             return attempts
         return [a for a in attempts if a.get("theme") == theme]
 
@@ -301,6 +301,8 @@ class QuizApp(tk.Tk):
         # Use parent to join relative path; with_name() forbids path separators
         self.stats = StatsManager(Path(__file__).parent / "data/personnal_data/progress_data.json")
         self.editor_processes: List[subprocess.Popen] = []
+
+        # Keep the entire UI English-only so the experience is consistent for all users.
 
         # Load data + build UI
         self.load_questions(json_path)
@@ -480,7 +482,7 @@ class QuizApp(tk.Tk):
 
         question_editor_btn = tk.Button(
             left_panel,
-            text="Ajouter des questions",
+            text="Add questions",
             command=self.open_question_editor,
             bg="#f97316",
             fg="#0b2b1f",
@@ -508,7 +510,7 @@ class QuizApp(tk.Tk):
 
         progress_title = tk.Label(
             progress_card,
-            text="Suivi & objectifs",
+            text="Progress & goals",
             font=("Helvetica", 13, "bold"),
             fg=self.text_color,
             bg="#eef2ff",
@@ -517,7 +519,7 @@ class QuizApp(tk.Tk):
 
         self.overall_progress_label = tk.Label(
             progress_card,
-            text="Taux de réussite : –",
+            text="Success rate: –",
             font=("Helvetica", 11),
             fg=self.text_color,
             bg="#eef2ff",
@@ -528,7 +530,7 @@ class QuizApp(tk.Tk):
 
         self.goal_status_label = tk.Label(
             progress_card,
-            text="Objectif : non défini",
+            text="Goal: not defined",
             font=("Helvetica", 11),
             fg=self.muted_text,
             bg="#eef2ff",
@@ -539,7 +541,7 @@ class QuizApp(tk.Tk):
 
         stats_btn = tk.Button(
             progress_card,
-            text="Voir le suivi détaillé",
+            text="View detailed tracking",
             command=self.show_stats_window,
             bg=self.accent_color,
             fg="white",
@@ -557,7 +559,7 @@ class QuizApp(tk.Tk):
 
         dashboard_btn = tk.Button(
             progress_card,
-            text="Ouvrir le dashboard",
+            text="Open dashboard",
             command=self.show_dashboard,
             bg="#0ea5e9",
             fg="#0b2b1f",
@@ -738,7 +740,9 @@ class QuizApp(tk.Tk):
         """Launch the external question editor window."""
         editor_path = Path(__file__).with_name("question_editor.py")
         if not editor_path.exists():
-            messagebox.showerror("Éditeur de questions", "Le fichier question_editor.py est introuvable.")
+            messagebox.showerror(
+                "Question editor", "The file question_editor.py could not be found."
+            )
             return
         try:
             proc = subprocess.Popen([sys.executable, str(editor_path)])
@@ -746,7 +750,9 @@ class QuizApp(tk.Tk):
             # Poll the editor process to reload questions once it exits
             self.after(1500, self._watch_question_editor)
         except Exception as exc:  # pragma: no cover - UI only
-            messagebox.showerror("Éditeur de questions", f"Impossible d'ouvrir l'éditeur : {exc}")
+            messagebox.showerror(
+                "Question editor", f"Could not open the editor: {exc}"
+            )
 
     def _watch_question_editor(self) -> None:
         """Reload questions when the external editor window is closed."""
@@ -846,32 +852,32 @@ class QuizApp(tk.Tk):
     def update_progress_card(self) -> None:
         overall = self.stats.compute_overall()
         goal = self.stats.get_goal()
-        rate_text = "Taux de réussite : –"
+        rate_text = "Success rate: –"
         if overall["total"]:
             rate_text = (
-                f"Taux de réussite : {overall['rate']:.1f}%"
+                f"Success rate: {overall['rate']:.1f}%"
                 f" ({overall['correct']}/{overall['total']})"
             )
         self.overall_progress_label.config(text=rate_text)
 
         if not goal or goal.get("target") is None:
-            goal_text = "Objectif actif : aucun"
+            goal_text = "Active goal: none"
         else:
             goal_target = goal.get("target")
             delta = goal_target - overall.get("rate", 0)
             if delta <= 0:
-                goal_text = f"Objectif atteint ({goal_target:.1f}%). Bravo !"
+                goal_text = f"Goal achieved ({goal_target:.1f}%). Nice work!"
             else:
-                goal_text = f"Objectif : {goal_target:.1f}% (encore {delta:.1f} pts)"
+                goal_text = f"Goal: {goal_target:.1f}% ({delta:.1f} pts remaining)"
 
-            label = goal.get("label") or f"Objectif {goal.get('id')}"
+            label = goal.get("label") or f"Goal {goal.get('id')}"
             if label:
                 goal_text += f"\n“{label}”"
 
         self.goal_status_label.config(text=goal_text)
 
     def _goal_display_text(self, goal: Dict[str, Any]) -> str:
-        label = goal.get("label") or "Objectif sans nom"
+        label = goal.get("label") or "Untitled goal"
         target = goal.get("target")
         target_text = f"{target:.1f}%" if target is not None else "—"
         return f"{label} ({target_text})"
@@ -879,12 +885,12 @@ class QuizApp(tk.Tk):
     def _render_theme_stats(self) -> str:
         breakdown = self.stats.theme_breakdown()
         if not breakdown:
-            return "Aucune tentative enregistrée."
+            return "No attempts recorded yet."
 
-        lines = ["Performance par thématique :"]
+        lines = ["Performance by thematic:"]
         for theme, stats in sorted(breakdown.items()):
             lines.append(
-                f"- {theme} : {stats.get('rate', 0):.1f}%"
+                f"- {theme}: {stats.get('rate', 0):.1f}%"
                 f" ({int(stats.get('correct', 0))}/{int(stats.get('total', 0))})"
             )
         return "\n".join(lines)
@@ -901,7 +907,9 @@ class QuizApp(tk.Tk):
 
         goals = self.stats.list_goals()
         menu.delete(0, "end")
-        menu.add_command(label="Aucun objectif", command=lambda v="none": self.dashboard_goal_var.set(v))
+        menu.add_command(
+            label="No goal", command=lambda v="none": self.dashboard_goal_var.set(v)
+        )
 
         for g in goals:
             gid = str(g.get("id"))
@@ -921,12 +929,12 @@ class QuizApp(tk.Tk):
 
     def show_stats_window(self) -> None:
         win = tk.Toplevel(self)
-        win.title("Suivi des performances")
+        win.title("Performance tracker")
         win.geometry("520x520")
 
         header = tk.Label(
             win,
-            text="Suivi détaillé",
+            text="Detailed tracking",
             font=("Helvetica", 14, "bold"),
         )
         header.pack(pady=(12, 6))
@@ -948,24 +956,24 @@ class QuizApp(tk.Tk):
         )
         theme_stats.pack(padx=12, pady=(0, 10), anchor="w")
 
-        goal_frame = tk.LabelFrame(win, text="Objectifs", padx=10, pady=8)
+        goal_frame = tk.LabelFrame(win, text="Goals", padx=10, pady=8)
         goal_frame.pack(fill="x", padx=12, pady=6)
         goal_frame.columnconfigure(1, weight=1)
 
-        tk.Label(goal_frame, text="Objectif affiché :", anchor="w").grid(row=0, column=0, sticky="w")
+        tk.Label(goal_frame, text="Displayed goal:", anchor="w").grid(row=0, column=0, sticky="w")
         self.stats_goal_var = tk.StringVar(value="new")
         goal_menu = tk.OptionMenu(goal_frame, self.stats_goal_var, "")
         goal_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
         goal_menu.grid(row=0, column=1, sticky="ew", padx=(6, 0))
-        tk.Label(goal_frame, text="(affiche le nom de l'objectif)", fg=self.muted_text).grid(
+        tk.Label(goal_frame, text="(shows the goal name)", fg=self.muted_text).grid(
             row=0, column=2, sticky="w", padx=(8, 0)
         )
 
-        tk.Label(goal_frame, text="Taux cible (%) :").grid(row=1, column=0, sticky="w", pady=(6, 0))
+        tk.Label(goal_frame, text="Target rate (%):").grid(row=1, column=0, sticky="w", pady=(6, 0))
         goal_entry = tk.Entry(goal_frame)
         goal_entry.grid(row=1, column=1, sticky="ew", padx=(6, 0), pady=(6, 0))
 
-        tk.Label(goal_frame, text="Nom de l'objectif :").grid(row=2, column=0, sticky="w")
+        tk.Label(goal_frame, text="Goal name:").grid(row=2, column=0, sticky="w")
         label_entry = tk.Entry(goal_frame)
         label_entry.grid(row=2, column=1, sticky="ew", padx=(6, 0), pady=(4, 0))
 
@@ -986,7 +994,9 @@ class QuizApp(tk.Tk):
             if goal_id is None:
                 goal_entry.delete(0, tk.END)
                 label_entry.delete(0, tk.END)
-                feedback_label.config(text="Nouveau objectif. Renseignez les champs puis enregistrez.")
+                feedback_label.config(
+                    text="New goal. Fill the fields and save it."
+                )
                 return
             goal = self.stats.get_goal(goal_id)
             if goal:
@@ -995,14 +1005,14 @@ class QuizApp(tk.Tk):
                 label_entry.delete(0, tk.END)
                 if goal.get("label"):
                     label_entry.insert(0, goal.get("label"))
-                feedback_label.config(text=f"Objectif #{goal_id} chargé.")
+                feedback_label.config(text=f"Goal #{goal_id} loaded.")
 
         def refresh_goal_menu(selected: Optional[str] = None) -> None:
             goals = self.stats.list_goals()
             menu = goal_menu["menu"]
             menu.delete(0, "end")
             menu.add_command(
-                label="Créer un nouvel objectif",
+                label="Create a new goal",
                 command=lambda v="new": (self.stats_goal_var.set(v), load_selected_goal()),
             )
             for g in goals:
@@ -1031,7 +1041,9 @@ class QuizApp(tk.Tk):
             try:
                 target = float(goal_entry.get())
             except ValueError:
-                feedback_label.config(text="Veuillez saisir un pourcentage valide.", fg=self.wrong_color)
+                feedback_label.config(
+                    text="Please enter a valid percentage.", fg=self.wrong_color
+                )
                 return
 
             label_val = label_entry.get().strip()
@@ -1039,11 +1051,11 @@ class QuizApp(tk.Tk):
             if is_new or goal_id is None:
                 new_id = self.stats.add_goal(target, label_val)
                 refresh_goal_menu(str(new_id))
-                feedback_label.config(text="Objectif créé et sélectionné.", fg=self.correct_color)
+                feedback_label.config(text="Goal created and selected.", fg=self.correct_color)
             else:
                 self.stats.update_goal(goal_id, target, label_val)
                 refresh_goal_menu(str(goal_id))
-                feedback_label.config(text="Objectif mis à jour.", fg=self.correct_color)
+                feedback_label.config(text="Goal updated.", fg=self.correct_color)
             self.update_progress_card()
             self.refresh_dashboard()
             self._refresh_dashboard_goal_menu(current_goal_id())
@@ -1052,10 +1064,10 @@ class QuizApp(tk.Tk):
         def set_active_goal() -> None:
             goal_id = current_goal_id()
             if goal_id is None:
-                feedback_label.config(text="Sélectionnez un objectif existant.", fg=self.wrong_color)
+                feedback_label.config(text="Select an existing goal.", fg=self.wrong_color)
                 return
             self.stats.set_active_goal(goal_id)
-            feedback_label.config(text="Objectif actif mis à jour.", fg=self.correct_color)
+            feedback_label.config(text="Active goal updated.", fg=self.correct_color)
             self.update_progress_card()
             self.refresh_dashboard()
             self._refresh_dashboard_goal_menu(goal_id)
@@ -1064,11 +1076,11 @@ class QuizApp(tk.Tk):
         def delete_goal() -> None:
             goal_id = current_goal_id()
             if goal_id is None:
-                feedback_label.config(text="Aucun objectif à supprimer.", fg=self.wrong_color)
+                feedback_label.config(text="No goal to delete.", fg=self.wrong_color)
                 return
             self.stats.delete_goal(goal_id)
             refresh_goal_menu()
-            feedback_label.config(text="Objectif supprimé.", fg=self.correct_color)
+            feedback_label.config(text="Goal deleted.", fg=self.correct_color)
             self.update_progress_card()
             self.refresh_dashboard()
             self._refresh_dashboard_goal_menu()
@@ -1079,7 +1091,7 @@ class QuizApp(tk.Tk):
 
         create_btn = tk.Button(
             btns,
-            text="Nouveau",
+            text="New",
             command=lambda: (self.stats_goal_var.set("new"), load_selected_goal()),
             bg="#e0f2fe",
             fg=self.text_color,
@@ -1093,7 +1105,7 @@ class QuizApp(tk.Tk):
 
         save_btn = tk.Button(
             btns,
-            text="Enregistrer",
+            text="Save",
             command=lambda: save_goal(is_new=False),
             bg=self.accent_color,
             fg="white",
@@ -1110,7 +1122,7 @@ class QuizApp(tk.Tk):
 
         add_btn = tk.Button(
             btns,
-            text="Créer",
+            text="Create",
             command=lambda: save_goal(is_new=True),
             bg="#0ea5e9",
             fg="#0b2b1f",
@@ -1127,7 +1139,7 @@ class QuizApp(tk.Tk):
 
         activate_btn = tk.Button(
             btns,
-            text="Définir comme actif",
+            text="Set as active",
             command=set_active_goal,
             bg="#10b981",
             fg="#0b2b1f",
@@ -1144,7 +1156,7 @@ class QuizApp(tk.Tk):
 
         delete_btn = tk.Button(
             btns,
-            text="Supprimer",
+            text="Delete",
             command=delete_goal,
             bg="#fca5a5",
             fg="#7f1d1d",
@@ -1164,15 +1176,15 @@ class QuizApp(tk.Tk):
             progress_delta = self.stats.progress_speed()
 
             if not overall["total"]:
-                summary_text = "Pas encore de données. Répondez à quelques questions pour activer le suivi."
+                summary_text = "No data yet. Answer a few questions to enable tracking."
             else:
                 delta_text = (
                     f"{progress_delta:+.1f} points" if progress_delta is not None else "N/A"
                 )
                 summary_text = (
-                    f"Taux de réussite global : {overall['rate']:.1f}%"
+                    f"Overall success rate: {overall['rate']:.1f}%"
                     f" ({overall['correct']}/{overall['total']})\n"
-                    f"Vitesse de progression (derniers 10 vs précédents) : {delta_text}"
+                    f"Progress speed (last 10 vs previous): {delta_text}"
                 )
             summary_label.config(text=summary_text)
             theme_stats.config(text=self._render_theme_stats())
@@ -1181,11 +1193,11 @@ class QuizApp(tk.Tk):
             goal = self.stats.get_goal(goal_id) if goal_id is not None else self.stats.get_goal()
             if goal and goal.get("target") is not None:
                 feedback_label.config(
-                    text=f"Objectif affiché : {self._goal_display_text(goal)}",
+                    text=f"Displayed goal: {self._goal_display_text(goal)}",
                     fg=self.correct_color,
                 )
             elif self.stats.list_goals():
-                feedback_label.config(text="Sélectionnez ou créez un objectif.", fg=self.muted_text)
+                feedback_label.config(text="Select or create a goal.", fg=self.muted_text)
 
         refresh_goal_menu()
         refresh_summary()
@@ -1198,7 +1210,7 @@ class QuizApp(tk.Tk):
 
         win = tk.Toplevel(self)
         self.dashboard_win = win
-        win.title("Dashboard interactif")
+        win.title("Interactive dashboard")
         win.geometry("1020x720")
         win.configure(bg=self.bg_color)
 
@@ -1207,7 +1219,7 @@ class QuizApp(tk.Tk):
 
         tk.Label(
             header,
-            text="Dashboard de progression",
+            text="Progress dashboard",
             font=("Helvetica", 18, "bold"),
             fg=self.text_color,
             bg=self.bg_color,
@@ -1215,7 +1227,7 @@ class QuizApp(tk.Tk):
 
         tk.Label(
             header,
-            text="Visualisez vos performances globales, par thème et dans le temps. Filtrez les données pour explorer votre progression.",
+            text="Visualize your overall, per-theme, and time-based performance. Filter the data to explore your progress.",
             font=("Helvetica", 11),
             fg=self.muted_text,
             bg=self.bg_color,
@@ -1227,11 +1239,11 @@ class QuizApp(tk.Tk):
         controls.pack(fill="x", padx=18, pady=(6, 12))
 
         tk.Label(
-            controls, text="Filtrer par thématique :", bg=self.bg_color, fg=self.text_color
+            controls, text="Filter by thematic:", bg=self.bg_color, fg=self.text_color
         ).grid(row=0, column=0, sticky="w")
 
-        theme_choices = ["Tous"] + self.themes
-        self.dashboard_theme_var = tk.StringVar(value="Tous")
+        theme_choices = ["All"] + self.themes
+        self.dashboard_theme_var = tk.StringVar(value="All")
         theme_menu = tk.OptionMenu(
             controls, self.dashboard_theme_var, *theme_choices, command=lambda _v: self.refresh_dashboard()
         )
@@ -1239,7 +1251,7 @@ class QuizApp(tk.Tk):
         theme_menu.grid(row=0, column=1, sticky="w", padx=(8, 16))
 
         tk.Label(
-            controls, text="Objectif affiché :", bg=self.bg_color, fg=self.text_color
+            controls, text="Displayed goal:", bg=self.bg_color, fg=self.text_color
         ).grid(row=0, column=2, sticky="w")
         self.dashboard_goal_var = tk.StringVar(value="none")
         self.dashboard_goal_menu = tk.OptionMenu(controls, self.dashboard_goal_var, "")
@@ -1249,7 +1261,7 @@ class QuizApp(tk.Tk):
 
         refresh_btn = tk.Button(
             controls,
-            text="Actualiser",
+            text="Refresh",
             command=self.refresh_dashboard,
             bg=self.accent_color,
             fg="white",
@@ -1280,7 +1292,7 @@ class QuizApp(tk.Tk):
         overall_card.rowconfigure(1, weight=1)
         tk.Label(
             overall_card,
-            text="Réussite globale & objectif",
+            text="Overall success & goal",
             font=("Helvetica", 14, "bold"),
             bg=self.card_color,
             fg=self.text_color,
@@ -1298,7 +1310,7 @@ class QuizApp(tk.Tk):
         trend_card.rowconfigure(1, weight=1)
         tk.Label(
             trend_card,
-            text="Tendance de réussite (moyenne glissante)",
+            text="Success trend (moving average)",
             font=("Helvetica", 14, "bold"),
             bg=self.card_color,
             fg=self.text_color,
@@ -1316,7 +1328,7 @@ class QuizApp(tk.Tk):
         theme_card.rowconfigure(1, weight=1)
         tk.Label(
             theme_card,
-            text="Répartition par thématique",
+            text="Breakdown by thematic",
             font=("Helvetica", 14, "bold"),
             bg=self.card_color,
             fg=self.text_color,
@@ -1333,7 +1345,7 @@ class QuizApp(tk.Tk):
         if not hasattr(self, "dashboard_win") or not self.dashboard_win.winfo_exists():
             return
 
-        theme_filter = getattr(self, "dashboard_theme_var", tk.StringVar(value="Tous")).get()
+        theme_filter = getattr(self, "dashboard_theme_var", tk.StringVar(value="All")).get()
         goal_val = getattr(self, "dashboard_goal_var", tk.StringVar(value="none")).get()
         pre_selected_goal_id = None
         try:
@@ -1351,7 +1363,7 @@ class QuizApp(tk.Tk):
         overall = self.stats.compute_overall(theme_filter)
         goal = self.stats.get_goal(goal_id) if goal_id is not None else self.stats.get_goal()
         trend_points = self.stats.moving_success(theme=theme_filter)
-        breakdown = self.stats.theme_breakdown(theme=theme_filter if theme_filter != "Tous" else None)
+        breakdown = self.stats.theme_breakdown(theme=theme_filter if theme_filter != "All" else None)
 
         self._draw_overall_card(self.dashboard_overall_canvas, overall, goal)
         self._draw_trend_chart(self.dashboard_trend_canvas, trend_points)
@@ -1398,16 +1410,16 @@ class QuizApp(tk.Tk):
         canvas.create_text(
             cx,
             cy + 26,
-            text=f"{overall.get('correct', 0)}/{overall.get('total', 0)} bonnes réponses",
+            text=f"{overall.get('correct', 0)}/{overall.get('total', 0)} correct answers",
             font=("Helvetica", 11),
             fill=self.muted_text,
         )
 
         target = goal.get("target") if goal else None
-        goal_label = self._goal_display_text(goal) if goal else "Aucun objectif"
+        goal_label = self._goal_display_text(goal) if goal else "No goal"
         if target is not None:
             delta = target - rate
-            status = "Objectif atteint" if delta <= 0 else f"Encore {delta:.1f} pts"
+            status = "Goal reached" if delta <= 0 else f"{delta:.1f} pts remaining"
             canvas.create_text(
                 cx,
                 height - 26,
@@ -1419,7 +1431,7 @@ class QuizApp(tk.Tk):
             canvas.create_text(
                 cx,
                 height - 26,
-                text="Répondez à quelques questions pour voir vos progrès",
+                text="Answer a few questions to see your progress",
                 font=("Helvetica", 11),
                 fill=self.muted_text,
             )
@@ -1443,7 +1455,7 @@ class QuizApp(tk.Tk):
             canvas.create_text(
                 width // 2,
                 height // 2,
-                text="Pas encore de données pour tracer une tendance.",
+                text="No data yet to plot a trend.",
                 font=("Helvetica", 11),
                 fill=self.muted_text,
             )
@@ -1476,7 +1488,7 @@ class QuizApp(tk.Tk):
         canvas.create_text(
             width // 2,
             margin - 12,
-            text="Évolution des réponses correctes (moyenne glissante sur 5 questions)",
+            text="Correct answers trend (5-question moving average)",
             font=("Helvetica", 11, "bold"),
             fill=self.text_color,
         )
@@ -1493,7 +1505,7 @@ class QuizApp(tk.Tk):
             canvas.create_text(
                 width // 2,
                 height // 2,
-                text="Aucune tentative pour afficher la répartition.",
+                text="No attempts yet to display the breakdown.",
                 font=("Helvetica", 11),
                 fill=self.muted_text,
             )
@@ -1539,7 +1551,7 @@ class QuizApp(tk.Tk):
         canvas.create_text(
             width // 2,
             margin - 16,
-            text="Classement par thématique (taux de réussite)",
+            text="Ranking by thematic (success rate)",
             font=("Helvetica", 11, "bold"),
             fill=self.text_color,
         )
@@ -1579,7 +1591,7 @@ class QuizApp(tk.Tk):
         self.show_question()
         if self.exam_mode:
             self.feedback_label.config(
-                text="Exam en cours : aucune correction avant la fin.",
+                text="Exam running: corrections appear at the end.",
                 fg=self.muted_text,
             )
         else:
@@ -1612,7 +1624,7 @@ class QuizApp(tk.Tk):
         self.current_index = 0
         self.update_score_label()
         self.feedback_label.config(
-            text="Exam en cours : les corrections seront affichées à la fin.",
+            text="Exam running: corrections will appear once finished.",
             fg=self.muted_text,
         )
         self.submit_btn.config(state="normal")
@@ -1633,7 +1645,7 @@ class QuizApp(tk.Tk):
         explanation = self._get_explanation_text(question)
         if (not is_correct) and explanation:
             self.explanation_label.config(
-                text=f"Explication : {explanation}",
+                text=f"Explanation: {explanation}",
                 fg=self.muted_text,
             )
         else:
@@ -1743,7 +1755,7 @@ class QuizApp(tk.Tk):
 
             self.exam_user_answers[self.current_index] = user_answer
             self.feedback_label.config(
-                text="Réponse enregistrée. Les corrections seront affichées à la fin.",
+                text="Answer saved. Corrections will be shown at the end.",
                 fg=self.muted_text,
             )
             self.submit_btn.config(state="disabled")
@@ -1850,12 +1862,13 @@ class QuizApp(tk.Tk):
         for idx, q in enumerate(self.filtered_questions):
             user_answer = self.exam_user_answers[idx]
             explanation = self._get_explanation_text(q)
+            # Build a human-readable correction block for each item once the exam ends.
             if q.category == "TF":
                 correct_answer: Union[bool, str] = bool(q.answer)  # type: ignore[arg-type]
                 is_correct = user_answer == correct_answer
                 correct_display = "True" if correct_answer else "False"
                 if user_answer is None:
-                    user_display = "Non répondu"
+                    user_display = "Not answered"
                     is_correct = False
                 else:
                     user_display = "True" if user_answer else "False"
@@ -1863,7 +1876,7 @@ class QuizApp(tk.Tk):
                 correct_answer = str(q.answer)
                 is_correct = user_answer == correct_answer
                 if user_answer is None:
-                    user_display = "Non répondu"
+                    user_display = "Not answered"
                     is_correct = False
                 else:
                     user_display = str(user_answer or "")
@@ -1875,12 +1888,12 @@ class QuizApp(tk.Tk):
 
             lines = [
                 f"Q{idx + 1} ({q.category} - {q.thematic}): {q.question}",
-                f"  Votre réponse : {user_display}",
-                f"  Réponse attendue : {correct_display}",
-                f"  Statut : {'✅ Correct' if is_correct else '❌ Incorrect'}",
+                f"  Your answer: {user_display}",
+                f"  Expected answer: {correct_display}",
+                f"  Status: {'✅ Correct' if is_correct else '❌ Incorrect'}",
             ]
             if (not is_correct) and explanation:
-                lines.append(f"  Explication : {explanation}")
+                lines.append(f"  Explanation: {explanation}")
 
             corrections.append("\n".join(lines) + "\n")
 
@@ -1890,19 +1903,19 @@ class QuizApp(tk.Tk):
         self.exam_mode = False
         self.update_score_label()
         self.feedback_label.config(
-            text=f"Exam terminé – Score: {percent:.1f}% ({correct_count}/{total_questions})",
+            text=f"Exam finished – Score: {percent:.1f}% ({correct_count}/{total_questions})",
             fg=self.text_color,
         )
         self.submit_btn.config(state="disabled")
         self.next_btn.config(state="disabled")
 
         summary_window = tk.Toplevel(self)
-        summary_window.title("Résultats de l'examen")
+        summary_window.title("Exam results")
         summary_window.geometry("750x500")
 
         title = tk.Label(
             summary_window,
-            text=f"Score: {percent:.1f}%   |   Temps écoulé: {self.timer_label.cget('text').split(': ',1)[1]}",
+            text=f"Score: {percent:.1f}%   |   Elapsed time: {self.timer_label.cget('text').split(': ',1)[1]}",
             font=("Helvetica", 13, "bold"),
         )
         title.pack(pady=10)
