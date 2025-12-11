@@ -897,12 +897,20 @@ class QuizApp(tk.Tk):
 
     def _refresh_dashboard_goal_menu(self, selected: Optional[int] = None) -> None:
         """Keep the dashboard goal selector in sync with stored objectives."""
+        # Guard against calls before the dashboard OptionMenu exists or after it was closed
+        # (Tk returns None for the "menu" attribute when the widget is destroyed).
         if not hasattr(self, "dashboard_goal_var") or not hasattr(self, "dashboard_goal_menu"):
             return
 
+        menu_widget = getattr(self, "dashboard_goal_menu", None)
+        if not menu_widget or not menu_widget.winfo_exists():
+            return
+
         try:
-            menu = self.dashboard_goal_menu["menu"]
+            menu = menu_widget["menu"]
         except Exception:
+            return
+        if menu is None:
             return
 
         goals = self.stats.list_goals()
