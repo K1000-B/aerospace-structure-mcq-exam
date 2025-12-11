@@ -14,6 +14,7 @@ import time
 import subprocess
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, Literal
 
@@ -259,6 +260,81 @@ class StatsManager:
             rate = (sum(rolling) / len(rolling)) * 100
             points.append((idx, rate))
         return points
+
+    def daily_activity(
+        self, days: int = 10, theme: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        attempts = self._filtered_attempts(theme)
+        today = datetime.now().date()
+        buckets: Dict[str, Dict[str, Any]] = {}
+
+        for delta in range(days):
+            day = today - timedelta(days=delta)
+            key = day.isoformat()
+            buckets[key] = {"label": day.strftime("%a %d"), "total": 0, "correct": 0}
+
+        for attempt in attempts:
+            ts = attempt.get("ts")
+            if ts is None:
+                continue
+            day = datetime.fromtimestamp(ts).date()
+            key = day.isoformat()
+            if key not in buckets:
+                continue
+            buckets[key]["total"] += 1
+            if attempt.get("correct"):
+                buckets[key]["correct"] += 1
+
+        ordered = [buckets[key] for key in sorted(buckets.keys())]
+        for item in ordered:
+            total = item.get("total", 0) or 0
+            correct = item.get("correct", 0) or 0
+            item["rate"] = (correct / total) * 100 if total else 0.0
+        return ordered
+
+    def category_breakdown(self, theme: Optional[str] = None) -> Dict[str, Dict[str, float]]:
+        attempts = self._filtered_attempts(theme)
+        stats: Dict[str, Dict[str, float]] = {}
+        for attempt in attempts:
+            cat = attempt.get("category", "Unknown")
+            stats.setdefault(cat, {"total": 0, "correct": 0})
+            stats[cat]["total"] += 1
+            if attempt.get("correct"):
+                stats[cat]["correct"] += 1
+
+        for cat, res in stats.items():
+            total = res.get("total", 0)
+            correct = res.get("correct", 0)
+            res["rate"] = (correct / total) * 100 if total else 0.0
+        return stats
+
+    def current_streak(self, theme: Optional[str] = None) -> int:
+        attempts = list(reversed(self._filtered_attempts(theme)))
+        streak = 0
+        for attempt in attempts:
+            if attempt.get("correct"):
+                streak += 1
+            else:
+                break
+        return streak
+
+    def recent_attempts(
+        self, limit: int = 8, theme: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        attempts = sorted(
+            self._filtered_attempts(theme), key=lambda a: a.get("ts", 0), reverse=True
+        )
+        return attempts[:limit]
+
+    def best_theme(self, theme: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        breakdown = self.theme_breakdown(theme=theme)
+        if not breakdown:
+            return None
+        ranked = sorted(
+            breakdown.items(), key=lambda item: (item[1].get("rate", 0), item[1].get("total", 0)), reverse=True
+        )
+        theme_name, stats = ranked[0]
+        return {"theme": theme_name, **stats}
 
 
 # ---------- Quiz application ----------
@@ -783,6 +859,17 @@ class QuizApp(tk.Tk):
         widget.bind("<Enter>", on_enter)
         widget.bind("<Leave>", on_leave)
 
+    def _make_meter_bar(self, parent: tk.Frame, key: str) -> None:
+        if not hasattr(self, "kpi_meters"):
+            self.kpi_meters: Dict[str, tk.Frame] = {}
+
+        track_bg = tk.Frame(parent, bg="#e2e8f0", height=7)
+        track_bg.pack(fill="x", pady=(6, 0))
+        track_bg.pack_propagate(False)
+        meter = tk.Frame(track_bg, bg=self.accent_color, height=7, width=0)
+        meter.pack(side="left", fill="y")
+        self.kpi_meters[key] = meter
+
     def animate_background(self) -> None:
         """Create soft, floating shapes to make the experience dynamic yet minimal."""
 
@@ -1243,6 +1330,50 @@ class QuizApp(tk.Tk):
             justify="left",
         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
 
+        summary = tk.Frame(win, bg=self.bg_color)
+        summary.pack(fill="x", padx=18, pady=(4, 10))
+        summary.columnconfigure((0, 1, 2, 3), weight=1, uniform="summary")
+
+        self.kpi_cards: Dict[str, tk.Label] = {}
+        for idx, (title, key) in enumerate(
+            [
+                ("Overall accuracy", "accuracy"),
+                ("Questions answered", "volume"),
+                ("Current streak", "streak"),
+                ("Goal tracking", "goal"),
+            ]
+        ):
+            card = tk.Frame(
+                summary,
+                bg=self.card_color,
+                highlightbackground=self.card_border,
+                highlightthickness=1,
+                bd=0,
+                padx=14,
+                pady=12,
+            )
+            card.grid(row=0, column=idx, sticky="nsew", padx=6)
+
+            tk.Label(
+                card,
+                text=title,
+                font=("Helvetica", 10, "bold"),
+                fg=self.muted_text,
+                bg=self.card_color,
+            ).pack(anchor="w")
+
+            value_label = tk.Label(
+                card,
+                text="–",
+                font=("Helvetica", 20, "bold"),
+                fg=self.text_color,
+                bg=self.card_color,
+            )
+            value_label.pack(anchor="w", pady=(4, 2))
+            self.kpi_cards[key] = value_label
+
+            self._make_meter_bar(card, key)
+
         controls = tk.Frame(win, bg=self.bg_color)
         controls.pack(fill="x", padx=18, pady=(6, 12))
 
@@ -1287,8 +1418,8 @@ class QuizApp(tk.Tk):
 
         grid = tk.Frame(win, bg=self.bg_color)
         grid.pack(fill="both", expand=True, padx=18, pady=(0, 18))
-        grid.columnconfigure(0, weight=1)
-        grid.columnconfigure(1, weight=1)
+        grid.columnconfigure(0, weight=2, uniform="grid")
+        grid.columnconfigure(1, weight=3, uniform="grid")
         grid.rowconfigure(0, weight=1)
         grid.rowconfigure(1, weight=1)
 
@@ -1332,7 +1463,7 @@ class QuizApp(tk.Tk):
         theme_card = tk.Frame(
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
-        theme_card.grid(row=1, column=0, columnspan=2, sticky="nsew", pady=(12, 0))
+        theme_card.grid(row=1, column=0, sticky="nsew", pady=(12, 0), padx=(0, 12))
         theme_card.rowconfigure(1, weight=1)
         tk.Label(
             theme_card,
@@ -1342,9 +1473,54 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_theme_canvas = tk.Canvas(
-            theme_card, width=920, height=260, bg=self.card_color, highlightthickness=0
+            theme_card, width=520, height=240, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_theme_canvas.grid(row=1, column=0, sticky="nsew")
+
+        right_col = tk.Frame(grid, bg=self.bg_color)
+        right_col.grid(row=1, column=1, sticky="nsew")
+        right_col.columnconfigure(0, weight=1)
+        right_col.rowconfigure((0, 1), weight=1)
+
+        activity_card = tk.Frame(
+            right_col, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
+        )
+        activity_card.grid(row=0, column=0, sticky="nsew", pady=(12, 6))
+        activity_card.rowconfigure(1, weight=1)
+        tk.Label(
+            activity_card,
+            text="Daily activity (last 10 days)",
+            font=("Helvetica", 13, "bold"),
+            bg=self.card_color,
+            fg=self.text_color,
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
+        self.dashboard_activity_canvas = tk.Canvas(
+            activity_card, width=420, height=180, bg=self.card_color, highlightthickness=0
+        )
+        self.dashboard_activity_canvas.grid(row=1, column=0, sticky="nsew")
+
+        detail_card = tk.Frame(
+            right_col, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
+        )
+        detail_card.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
+        tk.Label(
+            detail_card,
+            text="Detailed follow-up",
+            font=("Helvetica", 13, "bold"),
+            bg=self.card_color,
+            fg=self.text_color,
+        ).pack(anchor="w", padx=14, pady=(12, 4))
+        tk.Label(
+            detail_card,
+            text="Latest answers with theme, format, and precision for quick diagnostics.",
+            font=("Helvetica", 10),
+            bg=self.card_color,
+            fg=self.muted_text,
+            wraplength=420,
+            justify="left",
+        ).pack(anchor="w", padx=14, pady=(0, 6))
+        self.dashboard_detail_container = tk.Frame(detail_card, bg=self.card_color)
+        self.dashboard_detail_container.pack(fill="both", expand=True, padx=12, pady=(0, 10))
 
         self._refresh_dashboard_goal_menu()
         self.refresh_dashboard()
@@ -1368,14 +1544,25 @@ class QuizApp(tk.Tk):
         except ValueError:
             goal_id = None
 
+        theme_arg = theme_filter if theme_filter != "All" else None
+
         overall = self.stats.compute_overall(theme_filter)
         goal = self.stats.get_goal(goal_id) if goal_id is not None else self.stats.get_goal()
         trend_points = self.stats.moving_success(theme=theme_filter)
-        breakdown = self.stats.theme_breakdown(theme=theme_filter if theme_filter != "All" else None)
+        breakdown = self.stats.theme_breakdown(theme=theme_arg)
+        activity = self.stats.daily_activity(theme=theme_arg)
+        recent = self.stats.recent_attempts(theme=theme_arg)
+        category_mix = self.stats.category_breakdown(theme=theme_arg)
+        streak = self.stats.current_streak(theme=theme_arg)
+        best_theme = self.stats.best_theme(theme=theme_arg)
+        speed = self.stats.progress_speed()
 
         self._draw_overall_card(self.dashboard_overall_canvas, overall, goal)
-        self._draw_trend_chart(self.dashboard_trend_canvas, trend_points)
+        self._draw_trend_chart(self.dashboard_trend_canvas, trend_points, speed)
         self._draw_theme_bars(self.dashboard_theme_canvas, breakdown)
+        self._draw_activity_chart(self.dashboard_activity_canvas, activity, category_mix)
+        self._render_recent_attempts(self.dashboard_detail_container, recent)
+        self._update_kpis(overall, goal, streak, best_theme, speed)
 
     def _draw_overall_card(
         self, canvas: tk.Canvas, overall: Dict[str, Any], goal: Optional[Dict[str, Any]]
@@ -1452,7 +1639,9 @@ class QuizApp(tk.Tk):
                 fill=self.muted_text,
             )
 
-    def _draw_trend_chart(self, canvas: tk.Canvas, points: List[tuple[int, float]]) -> None:
+    def _draw_trend_chart(
+        self, canvas: tk.Canvas, points: List[tuple[int, float]], speed: Optional[float] = None
+    ) -> None:
         canvas.delete("all")
         width = int(canvas["width"])
         height = int(canvas["height"])
@@ -1500,6 +1689,15 @@ class QuizApp(tk.Tk):
             font=("Helvetica", 11, "bold"),
             fill=self.text_color,
         )
+        if speed is not None:
+            canvas.create_text(
+                width - margin,
+                margin - 12,
+                text=f"Δ {speed:+.1f} pts (recent vs prev)",
+                font=("Helvetica", 10, "bold"),
+                fill=self.correct_color if speed >= 0 else self.wrong_color,
+                anchor="e",
+            )
 
     def _draw_theme_bars(self, canvas: tk.Canvas, breakdown: Dict[str, Dict[str, float]]) -> None:
         canvas.delete("all")
@@ -1521,6 +1719,7 @@ class QuizApp(tk.Tk):
 
         themes = list(sorted(breakdown.items(), key=lambda kv: kv[1].get("rate", 0), reverse=True))
         max_rate = max(stats.get("rate", 0) for _, stats in themes) or 1
+        max_total = max(stats.get("total", 0) for _, stats in themes) or 1
         available_h = height - margin * 2
         bar_height = max(14, min(36, (available_h - bar_gap * (len(themes) - 1)) / len(themes)))
 
@@ -1530,7 +1729,16 @@ class QuizApp(tk.Tk):
             correct = int(stats.get("correct", 0))
             total = int(stats.get("total", 0))
             bar_width = (rate / max_rate) * (width - margin * 2)
+            volume_width = (total / max_total) * (width - margin * 2)
 
+            canvas.create_rectangle(
+                margin,
+                y,
+                margin + volume_width,
+                y + bar_height,
+                fill="#e2e8f0",
+                outline="",
+            )
             canvas.create_rectangle(
                 margin,
                 y,
@@ -1544,15 +1752,15 @@ class QuizApp(tk.Tk):
                 y,
                 width - margin,
                 y + bar_height,
-                outline="#e2e8f0",
+                outline="#cbd5e1",
                 width=1,
             )
             canvas.create_text(
-                margin + 6,
+                margin + 8,
                 y + bar_height / 2,
                 text=f"{theme} — {rate:.1f}% ({correct}/{total})",
                 anchor="w",
-                fill="white" if rate > 15 else self.text_color,
+                fill="white" if rate > 18 else self.text_color,
                 font=("Helvetica", 11, "bold"),
             )
 
@@ -1563,6 +1771,193 @@ class QuizApp(tk.Tk):
             font=("Helvetica", 11, "bold"),
             fill=self.text_color,
         )
+
+    def _draw_activity_chart(
+        self,
+        canvas: tk.Canvas,
+        activity: List[Dict[str, Any]],
+        category_mix: Dict[str, Dict[str, float]],
+    ) -> None:
+        canvas.delete("all")
+        width = int(canvas["width"])
+        height = int(canvas["height"])
+        margin = 38
+
+        canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
+        if not activity:
+            canvas.create_text(
+                width // 2,
+                height // 2,
+                text="No attempts logged yet.",
+                font=("Helvetica", 11),
+                fill=self.muted_text,
+            )
+            return
+
+        max_total = max(item.get("total", 0) for item in activity) or 1
+        bar_area_h = height - 100
+        bar_width = max(8, (width - margin * 2) / max(len(activity), 1) - 6)
+
+        for idx, item in enumerate(activity):
+            total = item.get("total", 0)
+            correct = item.get("correct", 0)
+            rate = item.get("rate", 0)
+            label = item.get("label", "")
+            x0 = margin + idx * (bar_width + 6)
+            x1 = x0 + bar_width
+            base_h = (total / max_total) * bar_area_h
+            correct_h = (correct / max_total) * bar_area_h
+            y_base = height - 60
+
+            canvas.create_rectangle(x0, y_base - base_h, x1, y_base, fill="#e2e8f0", outline="")
+            canvas.create_rectangle(x0, y_base - correct_h, x1, y_base, fill=self.accent_color, outline="")
+            canvas.create_text((x0 + x1) / 2, y_base + 14, text=label, angle=25, font=("Helvetica", 9), fill=self.muted_text)
+            canvas.create_text(
+                (x0 + x1) / 2,
+                y_base - base_h - 10,
+                text=f"{rate:.0f}%",
+                font=("Helvetica", 9, "bold"),
+                fill=self.text_color,
+            )
+
+        # Legend and category mix
+        legend_y = height - 26
+        canvas.create_rectangle(margin, legend_y - 6, margin + 12, legend_y + 6, fill=self.accent_color, outline="")
+        canvas.create_text(margin + 16, legend_y, text="Correct", anchor="w", font=("Helvetica", 9), fill=self.text_color)
+        canvas.create_rectangle(margin + 90, legend_y - 6, margin + 102, legend_y + 6, fill="#e2e8f0", outline="")
+        canvas.create_text(margin + 106, legend_y, text="Attempts", anchor="w", font=("Helvetica", 9), fill=self.text_color)
+
+        if category_mix:
+            cat_x = width - 120
+            canvas.create_text(cat_x - 10, legend_y - 18, text="By format", anchor="e", font=("Helvetica", 10, "bold"), fill=self.text_color)
+            sorted_cats = sorted(category_mix.items(), key=lambda c: c[0])
+            for idx, (cat, stats) in enumerate(sorted_cats):
+                share = min(1.0, stats.get("rate", 0) / 100)
+                bar_w = 80 * share
+                y = legend_y - 2 + idx * 16
+                canvas.create_rectangle(cat_x, y, cat_x + bar_w, y + 10, fill=self.correct_color if share > 0.65 else self.accent_color, outline="")
+                canvas.create_rectangle(cat_x, y, cat_x + 80, y + 10, outline="#cbd5e1")
+                canvas.create_text(cat_x - 6, y + 5, text=cat, anchor="e", font=("Helvetica", 9), fill=self.text_color)
+
+    def _render_recent_attempts(self, container: tk.Frame, attempts: List[Dict[str, Any]]) -> None:
+        for child in container.winfo_children():
+            child.destroy()
+
+        if not attempts:
+            tk.Label(
+                container,
+                text="No answers recorded yet.",
+                bg=self.card_color,
+                fg=self.muted_text,
+                font=("Helvetica", 11),
+            ).pack(anchor="w", pady=6)
+            return
+
+        for attempt in attempts:
+            row = tk.Frame(container, bg=self.card_color)
+            row.pack(fill="x", pady=4)
+
+            status = "Correct" if attempt.get("correct") else "Wrong"
+            color = self.correct_color if attempt.get("correct") else self.wrong_color
+            tk.Label(
+                row,
+                text=status,
+                bg=self.card_color,
+                fg=color,
+                font=("Helvetica", 10, "bold"),
+                width=8,
+                anchor="w",
+            ).pack(side="left")
+
+            tk.Label(
+                row,
+                text=f"{attempt.get('theme', '–')} · {attempt.get('category', '–')}",
+                bg=self.card_color,
+                fg=self.text_color,
+                font=("Helvetica", 10, "bold"),
+                anchor="w",
+            ).pack(side="left", padx=(6, 0))
+
+            tk.Label(
+                row,
+                text=f"Q{attempt.get('question_id', '?')} · {self._format_relative_time(attempt.get('ts'))}",
+                bg=self.card_color,
+                fg=self.muted_text,
+                font=("Helvetica", 9),
+            ).pack(side="right")
+
+    def _format_relative_time(self, ts: Optional[float]) -> str:
+        if ts is None:
+            return "Unknown time"
+        try:
+            dt = datetime.fromtimestamp(ts)
+        except (TypeError, ValueError, OSError):
+            return "Unknown time"
+        delta = datetime.now() - dt
+        if delta < timedelta(minutes=1):
+            return "just now"
+        if delta < timedelta(hours=1):
+            mins = int(delta.total_seconds() // 60)
+            return f"{mins} min ago"
+        if delta < timedelta(days=1):
+            hours = int(delta.total_seconds() // 3600)
+            return f"{hours} h ago"
+        return dt.strftime("%b %d, %H:%M")
+
+    def _update_kpis(
+        self,
+        overall: Dict[str, Any],
+        goal: Optional[Dict[str, Any]],
+        streak: int,
+        best_theme: Optional[Dict[str, Any]],
+        speed: Optional[float],
+    ) -> None:
+        if not hasattr(self, "kpi_cards"):
+            return
+
+        accuracy = overall.get("rate", 0.0)
+        total = overall.get("total", 0)
+        goal_target = goal.get("target") if goal else None
+
+        self.kpi_cards["accuracy"].config(
+            text=f"{accuracy:.1f}%" if total else "–", fg=self.text_color
+        )
+
+        if best_theme and best_theme.get("total"):
+            self.kpi_cards["accuracy"].config(
+                text=f"{accuracy:.1f}% · {best_theme['theme']}"
+            )
+
+        self.kpi_cards["volume"].config(text=str(total), fg=self.text_color)
+        self.kpi_cards["streak"].config(
+            text=f"{streak} in a row" if streak else "No streak yet",
+            fg=self.correct_color if streak else self.muted_text,
+        )
+
+        goal_text = "No goal"
+        goal_color = self.muted_text
+        if goal_target is not None:
+            delta = goal_target - accuracy
+            goal_text = "Goal reached" if delta <= 0 else f"{delta:.1f} pts left"
+            goal_color = self.correct_color if delta <= 0 else self.accent_color
+        self.kpi_cards["goal"].config(text=goal_text, fg=goal_color)
+
+        def _set_meter(key: str, ratio: float) -> None:
+            meter = self.kpi_meters.get(key)
+            if not meter:
+                return
+            track = meter.master
+            track.update_idletasks()
+            width = max(track.winfo_width(), 1)
+            meter.config(width=int(width * max(0.0, min(1.0, ratio))))
+
+        _set_meter("accuracy", accuracy / 100 if total else 0)
+        _set_meter("volume", min(total / 50, 1.0))
+        _set_meter("streak", min(streak / 10, 1.0))
+        if goal_target:
+            _set_meter("goal", min(accuracy / goal_target if goal_target else 0, 1.0))
+        else:
+            _set_meter("goal", 0.2)
 
     # ---------- Theme & navigation ----------
 
