@@ -347,16 +347,16 @@ class QuizApp(tk.Tk):
         self.geometry("1000x650")
         self.minsize(900, 550)
 
-        # Design palette
-        self.bg_color = "#f8fafc"       # airy background
-        self.card_color = "#ffffff"     # panels
-        self.card_border = "#e2e8f0"    # soft outline
-        self.accent_color = "#2563eb"   # primary blue
-        self.accent_hover = "#1d4ed8"
-        self.correct_color = "#16a34a"  # green
-        self.wrong_color = "#dc2626"    # red
-        self.text_color = "#0f172a"     # dark text
-        self.muted_text = "#475569"     # secondary text
+        # Design palette (minimal, hardware-inspired)
+        self.bg_color = "#f5f5f7"       # airy background reminiscent of macOS panels
+        self.card_color = "#ffffff"     # crisp surfaces
+        self.card_border = "#d2d2d7"    # subtle outline
+        self.accent_color = "#1c1c1e"   # graphite accent
+        self.accent_hover = "#2c2c34"
+        self.correct_color = "#34c759"  # apple green
+        self.wrong_color = "#ff3b30"    # apple red
+        self.text_color = "#1d1d1f"     # primary text
+        self.muted_text = "#6e6e73"     # secondary text
 
         self.configure(bg=self.bg_color)
 
@@ -377,6 +377,7 @@ class QuizApp(tk.Tk):
         # Use parent to join relative path; with_name() forbids path separators
         self.stats = StatsManager(Path(__file__).parent / "data/personnal_data/progress_data.json")
         self.editor_processes: List[subprocess.Popen] = []
+        self._dashboard_resize_job: Optional[str] = None
 
         # Keep the entire UI English-only so the experience is consistent for all users.
 
@@ -576,7 +577,7 @@ class QuizApp(tk.Tk):
 
         progress_card = tk.Frame(
             left_panel,
-            bg="#eef2ff",
+            bg="#f2f2f7",
             bd=0,
             highlightthickness=1,
             highlightbackground=self.card_border,
@@ -589,7 +590,7 @@ class QuizApp(tk.Tk):
             text="Progress & goals",
             font=("Helvetica", 13, "bold"),
             fg=self.text_color,
-            bg="#eef2ff",
+            bg="#f2f2f7",
         )
         progress_title.grid(row=0, column=0, sticky="w", padx=12, pady=(12, 4))
 
@@ -598,7 +599,7 @@ class QuizApp(tk.Tk):
             text="Success rate: –",
             font=("Helvetica", 11),
             fg=self.text_color,
-            bg="#eef2ff",
+            bg="#f2f2f7",
             wraplength=200,
             justify="left",
         )
@@ -609,7 +610,7 @@ class QuizApp(tk.Tk):
             text="Goal: not defined",
             font=("Helvetica", 11),
             fg=self.muted_text,
-            bg="#eef2ff",
+            bg="#f2f2f7",
             wraplength=200,
             justify="left",
         )
@@ -620,7 +621,7 @@ class QuizApp(tk.Tk):
             text="View detailed tracking",
             command=self.show_stats_window,
             bg=self.accent_color,
-            fg="black",
+            fg="white",
             bd=0,
             font=("Helvetica", 11, "bold"),
             activebackground=self.accent_hover,
@@ -637,19 +638,19 @@ class QuizApp(tk.Tk):
             progress_card,
             text="Open dashboard",
             command=self.show_dashboard,
-            bg="#0ea5e9",
-            fg="#0b2b1f",
+            bg=self.accent_color,
+            fg="white",
             bd=0,
             font=("Helvetica", 11, "bold"),
-            activebackground="#0284c7",
-            activeforeground="#0b2b1f",
+            activebackground=self.accent_hover,
+            activeforeground="white",
             padx=10,
             pady=6,
             relief="flat",
             cursor="hand2",
         )
         dashboard_btn.grid(row=4, column=0, sticky="ew", padx=12, pady=(0, 14))
-        self._add_hover_effect(dashboard_btn, "#0ea5e9", "#0284c7")
+        self._add_hover_effect(dashboard_btn, self.accent_color, self.accent_hover)
 
         # Right panel: quiz card
         quiz_card = tk.Frame(
@@ -889,7 +890,7 @@ class QuizApp(tk.Tk):
         self.bubbles = []
         width = max(self.winfo_width(), 900)
         height = max(self.winfo_height(), 550)
-        palette = ["#dbeafe", "#e0f2fe", "#e2e8f0", "#bfdbfe"]
+        palette = ["#f2f2f7", "#e5e5ea", "#d2d2d7", "#c7c7cc"]
 
         for _ in range(9):
             size = random.randint(60, 140)
@@ -1058,7 +1059,7 @@ class QuizApp(tk.Tk):
         tk.Label(goal_frame, text="Displayed goal:", anchor="w").grid(row=0, column=0, sticky="w")
         self.stats_goal_var = tk.StringVar(value="new")
         goal_menu = tk.OptionMenu(goal_frame, self.stats_goal_var, "")
-        goal_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
+        goal_menu.config(bg="#f0f0f5", fg=self.text_color, bd=0, highlightthickness=0)
         goal_menu.grid(row=0, column=1, sticky="ew", padx=(6, 0))
         tk.Label(goal_frame, text="(shows the goal name)", fg=self.muted_text).grid(
             row=0, column=2, sticky="w", padx=(8, 0)
@@ -1188,7 +1189,7 @@ class QuizApp(tk.Tk):
             btns,
             text="New",
             command=lambda: (self.stats_goal_var.set("new"), load_selected_goal()),
-            bg="#e0f2fe",
+            bg="#f0f0f5",
             fg=self.text_color,
             bd=0,
             font=("Helvetica", 10, "bold"),
@@ -1203,7 +1204,7 @@ class QuizApp(tk.Tk):
             text="Save",
             command=lambda: save_goal(is_new=False),
             bg=self.accent_color,
-            fg="black",
+            fg="white",
             bd=0,
             font=("Helvetica", 10, "bold"),
             activebackground=self.accent_hover,
@@ -1219,18 +1220,18 @@ class QuizApp(tk.Tk):
             btns,
             text="Create",
             command=lambda: save_goal(is_new=True),
-            bg="#0ea5e9",
-            fg="#0b2b1f",
+            bg=self.accent_color,
+            fg="white",
             bd=0,
             font=("Helvetica", 10, "bold"),
-            activebackground="#0284c7",
-            activeforeground="#0b2b1f",
+            activebackground=self.accent_hover,
+            activeforeground="white",
             padx=8,
             pady=6,
             relief="flat",
         )
         add_btn.grid(row=0, column=2, padx=(0, 6))
-        self._add_hover_effect(add_btn, "#0ea5e9", "#0284c7")
+        self._add_hover_effect(add_btn, self.accent_color, self.accent_hover)
 
         activate_btn = tk.Button(
             btns,
@@ -1306,7 +1307,11 @@ class QuizApp(tk.Tk):
         win = tk.Toplevel(self)
         self.dashboard_win = win
         win.title("Interactive dashboard")
-        win.geometry("1020x720")
+        screen_w, screen_h = self.winfo_screenwidth(), self.winfo_screenheight()
+        win_w = max(980, int(screen_w * 0.6))
+        win_h = max(720, int(screen_h * 0.62))
+        win.geometry(f"{win_w}x{win_h}")
+        win.minsize(900, 640)
         win.configure(bg=self.bg_color)
 
         header = tk.Frame(win, bg=self.bg_color)
@@ -1326,7 +1331,7 @@ class QuizApp(tk.Tk):
             font=("Helvetica", 11),
             fg=self.muted_text,
             bg=self.bg_color,
-            wraplength=760,
+            wraplength=max(660, int(win_w * 0.62)),
             justify="left",
         ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
 
@@ -1383,10 +1388,11 @@ class QuizApp(tk.Tk):
 
         theme_choices = ["All"] + self.themes
         self.dashboard_theme_var = tk.StringVar(value="All")
+        chip_bg = "#f0f0f5"
         theme_menu = tk.OptionMenu(
             controls, self.dashboard_theme_var, *theme_choices, command=lambda _v: self.refresh_dashboard()
         )
-        theme_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
+        theme_menu.config(bg=chip_bg, fg=self.text_color, bd=0, highlightthickness=0)
         theme_menu.grid(row=0, column=1, sticky="w", padx=(8, 16))
 
         tk.Label(
@@ -1394,7 +1400,7 @@ class QuizApp(tk.Tk):
         ).grid(row=0, column=2, sticky="w")
         self.dashboard_goal_var = tk.StringVar(value="none")
         self.dashboard_goal_menu = tk.OptionMenu(controls, self.dashboard_goal_var, "")
-        self.dashboard_goal_menu.config(bg="#e0f2fe", fg=self.text_color, bd=0, highlightthickness=0)
+        self.dashboard_goal_menu.config(bg=chip_bg, fg=self.text_color, bd=0, highlightthickness=0)
         self.dashboard_goal_menu.grid(row=0, column=3, sticky="w", padx=(8, 16))
         self.dashboard_goal_var.trace_add("write", lambda *_: self.refresh_dashboard())
 
@@ -1403,7 +1409,7 @@ class QuizApp(tk.Tk):
             text="Refresh",
             command=self.refresh_dashboard,
             bg=self.accent_color,
-            fg="black",
+            fg="white",
             bd=0,
             font=("Helvetica", 10, "bold"),
             activebackground=self.accent_hover,
@@ -1415,6 +1421,14 @@ class QuizApp(tk.Tk):
         refresh_btn.grid(row=0, column=4, sticky="w")
         self._add_hover_effect(refresh_btn, self.accent_color, self.accent_hover)
         controls.columnconfigure(4, weight=1)
+
+        donut_w = max(320, int(win_w * 0.26))
+        donut_h = max(260, int(win_h * 0.32))
+        trend_w = max(520, int(win_w * 0.44))
+        theme_w = max(520, int(win_w * 0.44))
+        theme_h = max(240, int(win_h * 0.28))
+        activity_w = max(420, int(win_w * 0.36))
+        activity_h = max(190, int(win_h * 0.22))
 
         grid = tk.Frame(win, bg=self.bg_color)
         grid.pack(fill="both", expand=True, padx=18, pady=(0, 18))
@@ -1437,7 +1451,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_overall_canvas = tk.Canvas(
-            overall_card, width=320, height=260, bg=self.card_color, highlightthickness=0
+            overall_card, width=donut_w, height=donut_h, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_overall_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1455,7 +1469,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_trend_canvas = tk.Canvas(
-            trend_card, width=520, height=260, bg=self.card_color, highlightthickness=0
+            trend_card, width=trend_w, height=donut_h, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_trend_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1473,7 +1487,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_theme_canvas = tk.Canvas(
-            theme_card, width=520, height=240, bg=self.card_color, highlightthickness=0
+            theme_card, width=theme_w, height=theme_h, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_theme_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1495,7 +1509,7 @@ class QuizApp(tk.Tk):
             fg=self.text_color,
         ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 6))
         self.dashboard_activity_canvas = tk.Canvas(
-            activity_card, width=420, height=180, bg=self.card_color, highlightthickness=0
+            activity_card, width=activity_w, height=activity_h, bg=self.card_color, highlightthickness=0
         )
         self.dashboard_activity_canvas.grid(row=1, column=0, sticky="nsew")
 
@@ -1522,8 +1536,19 @@ class QuizApp(tk.Tk):
         self.dashboard_detail_container = tk.Frame(detail_card, bg=self.card_color)
         self.dashboard_detail_container.pack(fill="both", expand=True, padx=12, pady=(0, 10))
 
+        win.bind("<Configure>", self._on_dashboard_resize)
         self._refresh_dashboard_goal_menu()
         self.refresh_dashboard()
+
+    def _on_dashboard_resize(self, _event: tk.Event) -> None:
+        if not hasattr(self, "dashboard_win") or not self.dashboard_win.winfo_exists():
+            return
+        if self._dashboard_resize_job:
+            try:
+                self.dashboard_win.after_cancel(self._dashboard_resize_job)
+            except tk.TclError:
+                pass
+        self._dashboard_resize_job = self.dashboard_win.after(140, self.refresh_dashboard)
 
     def refresh_dashboard(self) -> None:
         if not hasattr(self, "dashboard_win") or not self.dashboard_win.winfo_exists():
@@ -1568,8 +1593,8 @@ class QuizApp(tk.Tk):
         self, canvas: tk.Canvas, overall: Dict[str, Any], goal: Optional[Dict[str, Any]]
     ) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
+        width = max(canvas.winfo_width(), int(canvas["width"]), 240)
+        height = max(canvas.winfo_height(), int(canvas["height"]), 240)
         cx, cy = width // 2, height // 2
         radius = min(width, height) // 2 - 24
         rate = overall.get("rate", 0)
@@ -1643,8 +1668,8 @@ class QuizApp(tk.Tk):
         self, canvas: tk.Canvas, points: List[tuple[int, float]], speed: Optional[float] = None
     ) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
+        width = max(canvas.winfo_width(), int(canvas["width"]), 320)
+        height = max(canvas.winfo_height(), int(canvas["height"]), 220)
         margin = 42
 
         canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
@@ -1701,8 +1726,8 @@ class QuizApp(tk.Tk):
 
     def _draw_theme_bars(self, canvas: tk.Canvas, breakdown: Dict[str, Dict[str, float]]) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
+        width = max(canvas.winfo_width(), int(canvas["width"]), 320)
+        height = max(canvas.winfo_height(), int(canvas["height"]), 200)
         margin = 60
         bar_gap = 16
 
@@ -1779,8 +1804,8 @@ class QuizApp(tk.Tk):
         category_mix: Dict[str, Dict[str, float]],
     ) -> None:
         canvas.delete("all")
-        width = int(canvas["width"])
-        height = int(canvas["height"])
+        width = max(canvas.winfo_width(), int(canvas["width"]), 320)
+        height = max(canvas.winfo_height(), int(canvas["height"]), 180)
         margin = 38
 
         canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
