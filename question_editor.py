@@ -18,7 +18,7 @@ QuestionCategory = str
 class QuestionEditor(tk.Tk):
     """Collect new questions via a friendly form and append them to the JSON file."""
 
-    def __init__(self, json_path: str = "mmc_questions.json") -> None:
+    def __init__(self, json_path: str = "data/mmc_questions.json") -> None:
         super().__init__()
         self.json_path = Path(json_path)
         self.title("MMC question editor")

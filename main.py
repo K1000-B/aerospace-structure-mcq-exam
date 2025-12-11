@@ -264,7 +264,7 @@ class StatsManager:
 # ---------- Quiz application ----------
 
 class QuizApp(tk.Tk):
-    def __init__(self, json_path: str = "mmc_questions.json"):
+    def __init__(self, json_path: str = "data/mmc_questions.json"):
         super().__init__()
         self.json_path = json_path
         self.title("MMC QCM Trainer")
@@ -298,7 +298,7 @@ class QuizApp(tk.Tk):
         self.exam_user_answers: List[Optional[Union[bool, str]]] = []
         self.timer_running: bool = False
         self.timer_start: float = 0.0
-        self.stats = StatsManager(Path(__file__).with_name("progress_data.json"))
+        self.stats = StatsManager(Path(__file__).with_name("data/personnal_data/progress_data.json"))
         self.editor_processes: List[subprocess.Popen] = []
 
         # Load data + build UI
@@ -1921,7 +1921,7 @@ class QuizApp(tk.Tk):
 
 
 def main() -> None:
-    app = QuizApp("mmc_questions.json")
+    app = QuizApp("data/mmc_questions.json")
     app.mainloop()
 
 
