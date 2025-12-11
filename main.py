@@ -298,7 +298,8 @@ class QuizApp(tk.Tk):
         self.exam_user_answers: List[Optional[Union[bool, str]]] = []
         self.timer_running: bool = False
         self.timer_start: float = 0.0
-        self.stats = StatsManager(Path(__file__).with_name("data/personnal_data/progress_data.json"))
+        # Use parent to join relative path; with_name() forbids path separators
+        self.stats = StatsManager(Path(__file__).parent / "data/personnal_data/progress_data.json")
         self.editor_processes: List[subprocess.Popen] = []
 
         # Load data + build UI
