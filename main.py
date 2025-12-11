@@ -251,14 +251,30 @@ class StatsManager:
         if not attempts:
             return []
 
-        rolling: List[int] = []
+        x_vals = list(range(1, len(attempts) + 1))
+        successes = [1 if a.get("correct") else 0 for a in attempts]
+
+        # Ordinary least squares regression to detect trend direction
+        n = len(x_vals)
+        mean_x = sum(x_vals) / n
+        mean_y = sum(successes) / n
+        denom = sum((x - mean_x) ** 2 for x in x_vals)
+        slope = (
+            sum((x - mean_x) * (y - mean_y) for x, y in zip(x_vals, successes)) / denom
+            if denom
+            else 0.0
+        )
+        intercept = mean_y - slope * mean_x
+
+        # Blend regression with a light exponential smoothing to keep short-term responsiveness
+        smoothing = 0.35
+        ema: Optional[float] = None
         points: List[tuple[int, float]] = []
-        for idx, attempt in enumerate(attempts, start=1):
-            rolling.append(1 if attempt.get("correct") else 0)
-            if len(rolling) > window:
-                rolling.pop(0)
-            rate = (sum(rolling) / len(rolling)) * 100
-            points.append((idx, rate))
+        for x, actual in zip(x_vals, successes):
+            regression_est = max(0.0, min(1.0, intercept + slope * x))
+            ema = actual if ema is None else smoothing * actual + (1 - smoothing) * ema
+            blended = 0.6 * regression_est + 0.4 * (ema if ema is not None else regression_est)
+            points.append((x, blended * 100))
         return points
 
     def daily_activity(
@@ -1306,7 +1322,7 @@ class QuizApp(tk.Tk):
         win = tk.Toplevel(self)
         self.dashboard_win = win
         win.title("Interactive dashboard")
-        win.geometry("1020x720")
+        win.geometry("1140x820")
         win.configure(bg=self.bg_color)
 
         header = tk.Frame(win, bg=self.bg_color)
@@ -1421,8 +1437,8 @@ class QuizApp(tk.Tk):
         grid.pack(fill="both", expand=True, padx=18, pady=(0, 18))
         grid.columnconfigure(0, weight=2, uniform="grid")
         grid.columnconfigure(1, weight=3, uniform="grid")
-        grid.rowconfigure(0, weight=1)
-        grid.rowconfigure(1, weight=1)
+        grid.rowconfigure(0, weight=1, minsize=280)
+        grid.rowconfigure(1, weight=1, minsize=320)
         self.dashboard_grid = grid
 
         # Overall donut chart
@@ -1453,7 +1469,7 @@ class QuizApp(tk.Tk):
         trend_card.rowconfigure(1, weight=1)
         tk.Label(
             trend_card,
-            text="Success trend (moving average)",
+            text="Success trend (regression blend)",
             font=("Helvetica", 14, "bold"),
             bg=self.card_color,
             fg=self.text_color,
@@ -1597,7 +1613,7 @@ class QuizApp(tk.Tk):
                 self.dashboard_grid.columnconfigure(1, minsize=right_w)
 
                 usable_h = max(self.dashboard_win.winfo_height() - 260, 540)
-                row_height = max(int(usable_h / 2), 240)
+                row_height = max(int(usable_h / 2), 280)
                 self.dashboard_grid.rowconfigure(0, minsize=row_height)
                 self.dashboard_grid.rowconfigure(1, minsize=row_height)
             self._dashboard_resize_job = self.dashboard_win.after(120, self.refresh_dashboard)
@@ -1616,10 +1632,15 @@ class QuizApp(tk.Tk):
     ) -> None:
         canvas.delete("all")
         canvas.update_idletasks()
-        width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 200)
-        height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 200)
-        cx, cy = width // 2, height // 2
-        radius = min(width, height) // 2 - 24
+        width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 220)
+        height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 220)
+
+        top_pad = 24
+        bottom_pad = 64
+        available_h = max(height - (top_pad + bottom_pad), 120)
+        cx = width // 2
+        cy = top_pad + available_h // 2
+        radius = max(min(width - 56, available_h) // 2, 60)
         rate = overall.get("rate", 0)
         total = overall.get("total", 0)
 
@@ -1665,7 +1686,7 @@ class QuizApp(tk.Tk):
             status = "Goal reached" if delta <= 0 else f"{delta:.1f} pts remaining"
             canvas.create_text(
                 cx,
-                height - 26,
+                height - 32,
                 text=f"{goal_label} · {status}",
                 font=("Helvetica", 11, "bold"),
                 fill=self.correct_color if delta <= 0 else self.accent_color,
@@ -1673,7 +1694,7 @@ class QuizApp(tk.Tk):
         elif not total:
             canvas.create_text(
                 cx,
-                height - 26,
+                height - 32,
                 text="Answer a few questions to see your progress",
                 font=("Helvetica", 11),
                 fill=self.muted_text,
@@ -1681,7 +1702,7 @@ class QuizApp(tk.Tk):
         else:
             canvas.create_text(
                 cx,
-                height - 26,
+                height - 32,
                 text=f"{goal_label}",
                 font=("Helvetica", 11, "bold"),
                 fill=self.muted_text,
@@ -1694,7 +1715,7 @@ class QuizApp(tk.Tk):
         canvas.update_idletasks()
         width = max(canvas.winfo_width(), canvas.winfo_reqwidth(), 200)
         height = max(canvas.winfo_height(), canvas.winfo_reqheight(), 180)
-        margin = 42
+        margin = 64
 
         canvas.create_rectangle(0, 0, width, height, fill=self.card_color, outline="")
         if not points:
@@ -1733,8 +1754,8 @@ class QuizApp(tk.Tk):
 
         canvas.create_text(
             width // 2,
-            margin - 12,
-            text="Correct answers trend (5-question moving average)",
+            margin - 16,
+            text="Correct answers trend (regression + EMA)",
             font=("Helvetica", 11, "bold"),
             fill=self.text_color,
         )
