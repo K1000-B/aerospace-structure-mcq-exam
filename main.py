@@ -1423,12 +1423,14 @@ class QuizApp(tk.Tk):
         grid.columnconfigure(1, weight=3, uniform="grid")
         grid.rowconfigure(0, weight=1)
         grid.rowconfigure(1, weight=1)
+        self.dashboard_grid = grid
 
         # Overall donut chart
         overall_card = tk.Frame(
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         overall_card.grid(row=0, column=0, sticky="nsew", padx=(0, 12), pady=(0, 12))
+        overall_card.columnconfigure(0, weight=1)
         overall_card.rowconfigure(1, weight=1)
         tk.Label(
             overall_card,
@@ -1447,6 +1449,7 @@ class QuizApp(tk.Tk):
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         trend_card.grid(row=0, column=1, sticky="nsew", padx=(12, 0), pady=(0, 12))
+        trend_card.columnconfigure(0, weight=1)
         trend_card.rowconfigure(1, weight=1)
         tk.Label(
             trend_card,
@@ -1465,6 +1468,7 @@ class QuizApp(tk.Tk):
             grid, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         theme_card.grid(row=1, column=0, sticky="nsew", pady=(12, 0), padx=(0, 12))
+        theme_card.columnconfigure(0, weight=1)
         theme_card.rowconfigure(1, weight=1)
         tk.Label(
             theme_card,
@@ -1487,6 +1491,7 @@ class QuizApp(tk.Tk):
             right_col, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         activity_card.grid(row=0, column=0, sticky="nsew", pady=(12, 6))
+        activity_card.columnconfigure(0, weight=1)
         activity_card.rowconfigure(1, weight=1)
         tk.Label(
             activity_card,
@@ -1504,6 +1509,7 @@ class QuizApp(tk.Tk):
             right_col, bg=self.card_color, highlightbackground=self.card_border, highlightthickness=1
         )
         detail_card.grid(row=1, column=0, sticky="nsew", pady=(6, 0))
+        detail_card.columnconfigure(0, weight=1)
         tk.Label(
             detail_card,
             text="Detailed follow-up",
@@ -1577,8 +1583,23 @@ class QuizApp(tk.Tk):
                 wrap = max(480, int(self.dashboard_win.winfo_width() * 0.72))
                 self.dashboard_header_desc.configure(wraplength=wrap)
             if hasattr(self, "dashboard_detail_desc"):
-                detail_wrap = max(360, int(self.dashboard_win.winfo_width() * 0.38))
-                self.dashboard_detail_desc.configure(wraplength=detail_wrap)
+                container_width = max(
+                    self.dashboard_detail_container.winfo_width(),
+                    int(self.dashboard_win.winfo_width() * 0.38),
+                    360,
+                )
+                self.dashboard_detail_desc.configure(wraplength=container_width - 24)
+            if hasattr(self, "dashboard_grid"):
+                usable_w = max(self.dashboard_win.winfo_width() - 48, 720)
+                left_w = int(usable_w * 0.45)
+                right_w = usable_w - left_w
+                self.dashboard_grid.columnconfigure(0, minsize=left_w)
+                self.dashboard_grid.columnconfigure(1, minsize=right_w)
+
+                usable_h = max(self.dashboard_win.winfo_height() - 260, 540)
+                row_height = max(int(usable_h / 2), 240)
+                self.dashboard_grid.rowconfigure(0, minsize=row_height)
+                self.dashboard_grid.rowconfigure(1, minsize=row_height)
             self._dashboard_resize_job = self.dashboard_win.after(120, self.refresh_dashboard)
 
         for widget in (
