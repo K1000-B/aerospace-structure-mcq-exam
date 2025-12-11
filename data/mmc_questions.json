@@ -486,6 +486,133 @@
       ],
       "answer": "riveted connections",
       "explication": "Bearing stress is the local compressive contact stress between a fastener (such as a rivet) and the surrounding hole. It is therefore directly associated with riveted connections, not with glued joints or shell through-thickness shear."
-    }
-  ]
+    },
+
+    
+  {
+    "id": 41,
+    "category": "TF",
+    "thematic": "Beams & Beam Theory",
+    "question": "IA GENERATED — In an Euler–Bernoulli beam, the cross-section remains plane and perpendicular to the deformed centerline.",
+    "choices": null,
+    "answer": true,
+    "explication": "Euler–Bernoulli theory assumes that plane sections remain plane and normal to the neutral axis after deformation. This directly implies that no shear deformation is considered, so the statement is true."
+  },
+
+  {
+    "id": 42,
+    "category": "TF",
+    "thematic": "Finite Elements & FEM",
+    "question": "IA GENERATED — Increasing the polynomial order of finite elements always improves the accuracy, regardless of mesh regularity.",
+    "choices": null,
+    "answer": false,
+    "explication": "High-order elements increase accuracy only if the mesh is sufficiently regular and the solution is smooth. Distorted elements or non-smooth fields degrade convergence, so the statement is false."
+  },
+
+  {
+    "id": 43,
+    "category": "QCM",
+    "thematic": "Thin-walled & Semi-monocoque Structures",
+    "question": "IA GENERATED — The shear flow in a closed thin-walled section under constant torsion is:",
+    "choices": [
+      "constant in every cell",
+      "proportional to the local panel thickness",
+      "linearly dependent on the polar moment of inertia",
+      "independent of the applied moment",
+      "equal to zero in the stiffened panels",
+      "none of the above"
+    ],
+    "answer": "constant in every cell",
+    "explication": "In a closed section subjected to pure torsion, the shear flow is constant in each cell because warping is constrained and equilibrium requires a uniform flow around each closed loop. Therefore the correct answer is that it is constant in every cell."
+  },
+  {
+    "id": 44,
+    "category": "QCM",
+    "thematic": "Buckling & Stability",
+    "question": "IA GENERATED — The critical buckling load of an Euler column:",
+    "choices": [
+      "is proportional to the square of its length",
+      "is inversely proportional to its length",
+      "is inversely proportional to the square of its length",
+      "does not depend on boundary conditions",
+      "is always independent of the material"
+    ],
+    "answer": "is inversely proportional to the square of its length",
+    "explication": "Euler's formula Pcr = π² EI / L² shows that the critical load decreases with the square of the length. Material properties do matter through E, and boundary conditions modify the effective length, so the only correct statement is the inverse-square dependence."
+  },
+  {
+    "id": 45,
+    "category": "TF",
+    "thematic": "Continuum & Constitutive Laws",
+    "question": "IA GENERATED — In an isotropic elastic material, shear stresses are completely independent from normal strains.",
+    "choices": null,
+    "answer": true,
+    "explication": "In linear isotropic elasticity, shear stresses depend only on shear strains through τ = 2Gγ, and are not influenced by normal strains. Coupling appears only between normal stresses and normal strains. The statement is therefore true."
+  },
+  {
+    "id": 46,
+    "category": "QCM",
+    "thematic": "Finite Elements & FEM",
+    "question": "IA GENERATED — In a displacement-based FE formulation, the stress field:",
+    "choices": [
+      "is always continuous between elements",
+      "is always discontinuous between elements",
+      "is continuous only for quadratic elements",
+      "depends on the interpolation of the displacement field",
+      "is independent of the finite element type"
+    ],
+    "answer": "depends on the interpolation of the displacement field",
+    "explication": "Stresses are derived from displacement gradients. Their continuity depends on how smooth the displacement approximation is. Standard C0 elements produce discontinuous stresses, but this depends on interpolation, not uniquely on the element type."
+  },
+  {
+    "id": 47,
+    "category": "TF",
+    "thematic": "Thin-walled & Semi-monocoque Structures",
+    "question": "IA GENERATED — For an open thin-walled section, torsion produces both St. Venant torsion and warping torsion.",
+    "choices": null,
+    "answer": true,
+    "explication": "Open sections have very low torsional stiffness, causing non-uniform shear and significant warping. Their torsional response combines St. Venant shear flow and warping-induced normal stresses, making the statement true."
+  },
+  {
+    "id": 48,
+    "category": "QCM",
+    "thematic": "General structural mechanics",
+    "question": "IA GENERATED — A statically indeterminate structure:",
+    "choices": [
+      "has internal forces independent of material stiffness",
+      "has internal forces depending on material stiffness",
+      "cannot be solved using FE methods",
+      "has no rigid-body modes",
+      "cannot carry bending loads"
+    ],
+    "answer": "has internal forces depending on material stiffness",
+    "explication": "In statically indeterminate systems, equilibrium alone is insufficient and compatibility must be enforced. Material stiffness influences deformation compatibility and therefore internal force distribution, making the correct answer the stiffness dependence."
+  },
+  {
+    "id": 49,
+    "category": "TF",
+    "thematic": "Plates & Plate Theory",
+    "question": "IA GENERATED — In Kirchhoff–Love plate theory, transverse shear deformation is neglected.",
+    "choices": null,
+    "answer": true,
+    "explication": "Kirchhoff–Love theory assumes that normals remain orthogonal to the mid-surface after deformation, which eliminates transverse shear deformation. This distinguishes it from Mindlin–Reissner plate theory, so the statement is true."
+  },
+  {
+    "id": 50,
+    "category": "QCM",
+    "thematic": "Joints & Connections",
+    "question": "IA GENERATED — In a bolted joint, the bearing stress is primarily:",
+    "choices": [
+      "a tangential shear over the bolt surface",
+      "a compressive stress between bolt and hole surface",
+      "an average shear in the plates",
+      "a bending stress in the bolt shank",
+      "a tensile stress in the bolt threads"
+    ],
+    "answer": "a compressive stress between bolt and hole surface",
+    "explication": "Bearing stress represents local compression at the interface between a fastener and the surrounding hole. It arises when the bolt presses into the material under load. Shear or bending effects exist but do not define bearing stress, making the compressive description correct."
+  }
+]
+
+  
 }
